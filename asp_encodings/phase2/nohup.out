@@ -1,0 +1,5 @@
+./exec_fase2.sh: line 10: 123839 Killed                  /home/reale/Clingo/clingo-4.5.4-linux-x86_64/clingo --parallel-mode=8 encoding.asp users.asp $inputStr > output.txt
+./exec_fase2.sh: line 10: 44460 Killed                  /home/reale/Clingo/clingo-4.5.4-linux-x86_64/clingo --parallel-mode=8 encoding.asp users.asp $inputStr > output_optimum.txt
+./exec_fase2.sh: line 10: 30428 Killed                  /home/reale/Clingo/clingo-4.5.4-linux-x86_64/clingo --parallel-mode=63 encoding.asp users.asp $inputStr > output_optimum.txt
+./exec_fase2.sh: line 10:  5342 Killed                  /home/reale/Clingo/clingo-4.5.4-linux-x86_64/clingo --parallel-mode=63 encoding.asp users.asp $inputStr > output_optimum.txt
+./exec_fase2.sh: line 10: 27397 Killed                  ../../../../clingo-4.5.4-linux-x86_64/clingo --parallel-mode=8 encoding.asp users.asp $inputStr > output_optimum.txt

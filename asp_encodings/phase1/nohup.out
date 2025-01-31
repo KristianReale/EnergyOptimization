@@ -1,0 +1,6 @@
+./exec_fase1.sh: line 9: 126599 Killed                  /home/reale/Clingo/clingo-4.5.4-linux-x86_64/clingo --parallel-mode=8 --opt-mode=opt encoding.asp params.asp $inputStr > output_optimum.txt
+./exec_fase1.sh: line 9:   602 Killed                  /home/reale/Clingo/clingo-4.5.4-linux-x86_64/clingo --parallel-mode=8 --opt-mode=optN encoding.asp params.asp $inputStr > output_optimum.txt
+./exec_fase1.sh: 1: ./exec_fase1.sh: Syntax error: "(" unexpected
+./exec_fase1.sh: 1: ./exec_fase1.sh: Syntax error: "(" unexpected
+bash: ./exec_fase2.sh: No such file or directory
+*** Warn : (clingo): Oversubscription: #Threads=63 exceeds logical CPUs=8.

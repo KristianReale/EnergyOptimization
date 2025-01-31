@@ -1,0 +1,23 @@
+import json
+
+from flask import Flask, jsonify, request
+from asp.first_phase.calculate import calculate_best_grid_transfer
+
+app = Flask(__name__)
+
+
+@app.route('/')
+def hello_world():  # put application's code here
+    return 'Hello World!'
+
+@app.route('/best_grid_transfer', methods=['POST'])
+def best_grid_transfer():
+    data = request.get_json()
+    esinit = data["ESInit"]
+    return jsonify(calculate_best_grid_transfer(esinit))
+    #return jsonify([{'day': 1, 'time':1, 'Pg': 10, 'PL': 5, 'PPV': 6, 'PS' : 4}, {'day': 1, 'time':1, 'Pg': 10, 'PL': 5, 'PPV': 6, 'PS' : 4}])
+
+
+
+if __name__ == '__main__':
+    app.run()
