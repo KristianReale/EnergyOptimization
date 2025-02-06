@@ -1,7 +1,7 @@
 import json
 
 from flask import Flask, jsonify, request
-from asp.first_phase.calculate import calculate_best_grid_transfer
+from asp.calculate import *
 
 app = Flask(__name__)
 
@@ -9,6 +9,12 @@ app = Flask(__name__)
 @app.route('/')
 def hello_world():  # put application's code here
     return 'Hello World!'
+
+@app.route('/best_energy_storage', methods=['POST'])
+def best_energy_storage():
+    data = request.get_json()
+    #esinit = data["ESInit"]
+    return jsonify(calculate_best_storage())
 
 @app.route('/best_grid_transfer', methods=['POST'])
 def best_grid_transfer():
