@@ -1,0 +1,8 @@
+statsmodels==0.11.0
+numpy==1.16.6
+PuLP==2.0
+pandas==1.0.0
+Flask==1.1.1
+matplotlib==3.1.2
+openpyxl==2.6.3
+

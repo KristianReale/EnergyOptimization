@@ -1,0 +1,8 @@
+statsmodels
+numpy
+PuLP
+pandas
+Flask
+matplotlib
+openpyxl
+
