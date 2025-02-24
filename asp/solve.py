@@ -1,12 +1,14 @@
 import subprocess
 import re
+import os
 
-DLV_PATH = "solver/DLV/macosx/dlv-2.1.2-arm64"
-ASP_PROGRAM_PATH = "asp_encodings/simplified/encoding.asp"
-ASP_PARAMS_PATH = "asp_encodings/simplified/params.asp"
+DLV_PATH = os.path.dirname(os.path.abspath(__file__)) + "/../solver/DLV/macosx/dlv-2.1.2-arm64"
+ASP_PROGRAM_PATH = os.path.dirname(os.path.abspath(__file__)) + "/../asp_encodings/simplified/encoding_article.asp"
+#ASP_PROGRAM_PATH = "asp_encodings/simplified/encoding.asp"
+ASP_PARAMS_PATH = os.path.dirname(os.path.abspath(__file__)) + "/../asp_encodings/simplified/params.asp"
 
 def calculate_best_storage(P, Q, PUN, PZ, CREG_PLUS, POFF_PLUS, CREG_MINUS, POFF_MINUS):
-    command = [DLV_PATH, ASP_PROGRAM_PATH, ASP_PARAMS_PATH, "--silent", "--stdin"]
+    command = [DLV_PATH, ASP_PROGRAM_PATH, ASP_PARAMS_PATH, "--silent"]
     # response = subprocess.run(command, capture_output=True, text=True)
     # return response.stdout
     print(P, Q, PUN, PZ, CREG_PLUS, POFF_PLUS, CREG_MINUS, POFF_MINUS)
@@ -186,13 +188,20 @@ def calculate_best_storage(P, Q, PUN, PZ, CREG_PLUS, POFF_PLUS, CREG_MINUS, POFF
     return object_result
 
 # SIMPLIFIED PHASE
-def calculate_best_grid_transfer(esinit):
-    command = [DLV_PATH, ASP_PROGRAM_PATH, ASP_PARAMS_PATH, "--silent", "--stdin"]
+def calculate_best_grid_transfer(esinit, factsFiles = None, saveResultsFile = None):
+    if factsFiles is None:
+        command = [DLV_PATH, ASP_PROGRAM_PATH, ASP_PARAMS_PATH, "--silent"]
+    else:
+        command = [DLV_PATH, ASP_PROGRAM_PATH, *factsFiles, ASP_PARAMS_PATH, "--silent"]
 
-    # response = subprocess.run(command, capture_output=True, text=True)
-    # return response.stdout
+    response = subprocess.run(command, capture_output=True, text=True)
+    if saveResultsFile is not None:
+        with open(saveResultsFile, "w+") as f:
+            f.write(response.stdout)
+    return best_grid_transfer_results_parse(response.stdout)
 
-    result = "{vP_L(1,1,0), vP_L(1,2,0), vP_L(1,3,0), vP_L(1,4,0), vP_L(1,5,0), vP_L(1,6,0), vP_L(1,7,0), vP_L(1,8,0), vP_L(1,9,0), vP_L(1,10,0), vP_L(1,11,0), vP_L(1,12,0), vP_L(1,13,0), vP_L(1,14,0), vP_L(1,15,0), vP_L(1,16,0), vP_L(1,17,0), vP_L(1,18,0), vP_L(1,19,0), vP_L(1,20,0), vP_L(1,21,0), vP_L(1,22,0), vP_L(1,23,0), vP_S(1,1,999), vP_S(1,2,999), vP_S(1,3,999), vP_S(1,4,999), vP_S(1,5,999), vP_S(1,6,999), vP_S(1,7,999), vP_S(1,8,999), vP_S(1,9,999), vP_S(1,10,999), vP_S(1,11,999), vP_S(1,12,999), vP_S(1,13,999), vP_S(1,14,999), vP_S(1,15,999), vP_S(1,16,999), vP_S(1,17,999), vP_S(1,18,999), vP_S(1,19,999), vP_S(1,20,999), vP_S(1,21,999), vP_S(1,22,999), vP_S(1,23,999), vP_PV(1,1,998), vP_PV(1,2,998), vP_PV(1,3,998), vP_PV(1,4,998), vP_PV(1,5,998), vP_PV(1,6,998), vP_PV(1,7,998), vP_PV(1,8,998), vP_PV(1,9,998), vP_PV(1,10,998), vP_PV(1,11,998), vP_PV(1,12,998), vP_PV(1,13,998), vP_PV(1,14,998), vP_PV(1,15,998), vP_PV(1,16,998), vP_PV(1,17,998), vP_PV(1,18,998), vP_PV(1,19,998), vP_PV(1,20,998), vP_PV(1,21,998), vP_PV(1,22,998), vP_PV(1,23,998)} COST 11442569@1"
+def best_grid_transfer_results_parse(result):
+    #result = "{vP_L(1,1,0), vP_L(1,2,0), vP_L(1,3,0), vP_L(1,4,0), vP_L(1,5,0), vP_L(1,6,0), vP_L(1,7,0), vP_L(1,8,0), vP_L(1,9,0), vP_L(1,10,0), vP_L(1,11,0), vP_L(1,12,0), vP_L(1,13,0), vP_L(1,14,0), vP_L(1,15,0), vP_L(1,16,0), vP_L(1,17,0), vP_L(1,18,0), vP_L(1,19,0), vP_L(1,20,0), vP_L(1,21,0), vP_L(1,22,0), vP_L(1,23,0), vP_S(1,1,999), vP_S(1,2,999), vP_S(1,3,999), vP_S(1,4,999), vP_S(1,5,999), vP_S(1,6,999), vP_S(1,7,999), vP_S(1,8,999), vP_S(1,9,999), vP_S(1,10,999), vP_S(1,11,999), vP_S(1,12,999), vP_S(1,13,999), vP_S(1,14,999), vP_S(1,15,999), vP_S(1,16,999), vP_S(1,17,999), vP_S(1,18,999), vP_S(1,19,999), vP_S(1,20,999), vP_S(1,21,999), vP_S(1,22,999), vP_S(1,23,999), vP_PV(1,1,998), vP_PV(1,2,998), vP_PV(1,3,998), vP_PV(1,4,998), vP_PV(1,5,998), vP_PV(1,6,998), vP_PV(1,7,998), vP_PV(1,8,998), vP_PV(1,9,998), vP_PV(1,10,998), vP_PV(1,11,998), vP_PV(1,12,998), vP_PV(1,13,998), vP_PV(1,14,998), vP_PV(1,15,998), vP_PV(1,16,998), vP_PV(1,17,998), vP_PV(1,18,998), vP_PV(1,19,998), vP_PV(1,20,998), vP_PV(1,21,998), vP_PV(1,22,998), vP_PV(1,23,998)} COST 11442569@1"
 
     pattern_vP_L = r'vP_L\((.*?)\)'  # Adatta se il formato cambia
     pattern_vP_PV = r'vP_PV\((.*?)\)'  # Adatta se il formato cambia
