@@ -77,11 +77,11 @@ def build_from_csv(input_file, output_dir, split_data = SPLIT_DATA.NO_SPLIT, for
                     f"vP_S(\"{date}\",{hour},{discharge * -10:.0f}).\n"
                 )'''
             stringToWrite += (
-                f"vP_PV(\"{date}\",{hour},{production* 10:.0f}).\n"
-                f"vP_L(\"{date}\",{hour},{consumption * 10:.0f}).\n"
+                f"vP_PV(\"{date}\",{hour},{production * 10 / 1000:.0f}).\n"
+                f"vP_L(\"{date}\",{hour},{consumption * 10 / 1000:.0f}).\n"
             )
         elif format == FORMAT.CSV:
-            stringToWrite += f"{date} {hour}:00:00,{discharge:.1f},{charge:.1f},{production:.1f},{consumption:.1f}\n"
+            stringToWrite += f"{date} {hour}:00:00,{discharge/1000:.1f},{charge/1000:.1f},{production/1000:.1f},{consumption/1000:.1f}\n"
 
         if split_data == SPLIT_DATA.DAY:
             if date not in outputParts:
@@ -107,13 +107,17 @@ def asp_to_cvs(input_file, output_file):
     with open(input_file, 'r') as in_f, open(output_file, 'w') as out_f:
         #{"P_L": vP_L_results, "P_PV": vP_PV_results, "P_S": vP_S_results}
         results = best_grid_transfer_results_parse(in_f.read())
-        out_f.write("date,Discharge(W),Charge(W),Production(W),Consumption(W)\n")#,State of Charge( %)")
+        out_f.write("date,Discharge(W),Charge(W),Production(W),Consumption(W),Feed-in(W),From grid(W)\n")#,State of Charge( %)")
         for cont in range(len(results["P_L"])):
             date = results["P_L"][cont]["day"].replace("\"", "") + " " + results["P_L"][cont]["time"] + ":00:00"
-            discharge = float(results["P_S"][cont]["value"]) / 10 if float(results["P_S"][cont]["value"]) > 0 else 0
-            charge = float(results["P_S"][cont]["value"]) / 10 if float(results["P_S"][cont]["value"]) < 0 else 0
+            #discharge = float(results["P_S"][cont]["value"]) / 10 if float(results["P_S"][cont]["value"]) > 0 else 0
+            #charge = float(results["P_S"][cont]["value"]) / 10 if float(results["P_S"][cont]["value"]) < 0 else 0
+            charge = float(results["Charge"][cont]["value"]) / 10
+            discharge = float(results["Discharge"][cont]["value"]) / 10
             production = float(results["P_PV"][cont]["value"]) / 10
             consumption = float(results["P_L"][cont]["value"]) / 10
-            out_f.write(f"{date},{discharge},{charge},{production},{consumption}\n")
+            feedin = float(results["Feed-in"][cont]["value"]) / 10
+            fromgrid = float(results["From grid"][cont]["value"]) / 10
+            out_f.write(f"{date},{discharge},{charge},{production},{consumption},{feedin},{fromgrid}\n")
 
 

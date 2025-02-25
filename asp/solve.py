@@ -1,6 +1,7 @@
 import subprocess
 import re
 import os
+from datetime import datetime
 
 DLV_PATH = os.path.dirname(os.path.abspath(__file__)) + "/../solver/DLV/macosx/dlv-2.1.2-arm64"
 ASP_PROGRAM_PATH = os.path.dirname(os.path.abspath(__file__)) + "/../asp_encodings/simplified/encoding_article.asp"
@@ -206,10 +207,18 @@ def best_grid_transfer_results_parse(result):
     pattern_vP_L = r'vP_L\((.*?)\)'  # Adatta se il formato cambia
     pattern_vP_PV = r'vP_PV\((.*?)\)'  # Adatta se il formato cambia
     pattern_vP_S = r'vP_S\((.*?)\)'  # Adatta se il formato cambia
+    pattern_charge = r'vCharge\((.*?)\)'  # Adatta se il formato cambia
+    pattern_discharge = r'vDischarge\((.*?)\)'  # Adatta se il formato cambia
+    pattern_feed_in = r'vFeed_in\((.*?)\)'  # Adatta se il formato cambia
+    pattern_from_grid = r'vFrom_grid\((.*?)\)'  # Adatta se il formato cambia
 
     matches_vP_L = re.findall(pattern_vP_L, result)
     matches_vP_PV = re.findall(pattern_vP_PV, result)
     matches_vP_S = re.findall(pattern_vP_S, result)
+    matches_charge = re.findall(pattern_charge, result)
+    matches_discharge = re.findall(pattern_discharge, result)
+    matches_feed_in = re.findall(pattern_feed_in, result)
+    matches_from_grid = re.findall(pattern_from_grid, result)
 
     vP_L_results = []
     for match in matches_vP_L:
@@ -223,6 +232,7 @@ def best_grid_transfer_results_parse(result):
 
         # Creare un oggetto VP_PV con i valori estratti
         vP_L_results.append({"day" : valori[0], "time" : valori[1], "value" : valori[2]})
+    vP_L_results = sorted(vP_L_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
 
     vP_PV_results = []
     for match in matches_vP_PV:
@@ -236,6 +246,7 @@ def best_grid_transfer_results_parse(result):
 
         # Creare un oggetto VP_PV con i valori estratti
         vP_PV_results.append({"day": valori[0], "time": valori[1], "value": valori[2]})
+    vP_PV_results = sorted(vP_PV_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
 
     vP_S_results = []
     for match in matches_vP_S:
@@ -249,5 +260,64 @@ def best_grid_transfer_results_parse(result):
 
         # Creare un oggetto VP_PV con i valori estratti
         vP_S_results.append({"day": valori[0], "time": valori[1], "value": valori[2]})
-    object_result = {"P_L": vP_L_results, "P_PV": vP_PV_results, "P_S": vP_S_results}
+    vP_S_results = sorted(vP_S_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
+
+    charge_results = []
+    for match in matches_charge:
+        # Suddividere il contenuto in massimo 3 parti
+        valori = match.split(",")  # Cambia il delimitatore se necessario
+        valori = [v.strip() for v in valori]  # Rimuove spazi extra
+
+        # Riempire con stringhe vuote se ci sono meno di 3 valori
+        while len(valori) < 3:
+            valori.append("")
+
+        # Creare un oggetto VP_PV con i valori estratti
+        charge_results.append({"day": valori[0], "time": valori[1], "value": valori[2]})
+    charge_results = sorted(charge_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
+
+    discharge_results = []
+    for match in matches_discharge:
+        # Suddividere il contenuto in massimo 3 parti
+        valori = match.split(",")  # Cambia il delimitatore se necessario
+        valori = [v.strip() for v in valori]  # Rimuove spazi extra
+
+        # Riempire con stringhe vuote se ci sono meno di 3 valori
+        while len(valori) < 3:
+            valori.append("")
+
+        # Creare un oggetto VP_PV con i valori estratti
+        discharge_results.append({"day": valori[0], "time": valori[1], "value": valori[2]})
+    discharge_results = sorted(discharge_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
+
+    feed_in_results = []
+    for match in matches_feed_in:
+        # Suddividere il contenuto in massimo 3 parti
+        valori = match.split(",")  # Cambia il delimitatore se necessario
+        valori = [v.strip() for v in valori]  # Rimuove spazi extra
+
+        # Riempire con stringhe vuote se ci sono meno di 3 valori
+        while len(valori) < 3:
+            valori.append("")
+
+        # Creare un oggetto VP_PV con i valori estratti
+        feed_in_results.append({"day": valori[0], "time": valori[1], "value": valori[2]})
+    feed_in_results = sorted(feed_in_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
+
+    from_grid_results = []
+    for match in matches_from_grid:
+        # Suddividere il contenuto in massimo 3 parti
+        valori = match.split(",")  # Cambia il delimitatore se necessario
+        valori = [v.strip() for v in valori]  # Rimuove spazi extra
+
+        # Riempire con stringhe vuote se ci sono meno di 3 valori
+        while len(valori) < 3:
+            valori.append("")
+
+        # Creare un oggetto VP_PV con i valori estratti
+        from_grid_results.append({"day": valori[0], "time": valori[1], "value": valori[2]})
+    from_grid_results = sorted(from_grid_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
+
+    object_result = {"P_L": vP_L_results, "P_PV": vP_PV_results, "P_S": vP_S_results, "Charge": charge_results,
+                     "Discharge": discharge_results, "Feed-in" : feed_in_results, "From grid": from_grid_results}
     return object_result
