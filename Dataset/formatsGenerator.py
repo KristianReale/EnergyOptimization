@@ -20,15 +20,16 @@ class FORMAT(Enum):
 
 def group_data(input_file): #per media
     hourly_data = defaultdict(
-        lambda: {'discharge': [], 'charge': [], 'production': [], 'consumption': [], 'state_of_charge': [], 'h1_w': []})
+        lambda: {'discharge': [], 'charge': [], 'production': [], 'consumption': [], 'feed_in': [], 'from_grid': [], 'state_of_charge': [], 'h1_w': []})
     with open(input_file, 'r') as csvfile:
         reader = csv.reader(csvfile)
         header = next(reader)  # Legge l'intestazione
 
         for row in reader:
             #print(row)
-            date, discharge, charge, production, consumption, state_of_charge, h1_w = row
-            if discharge == '' and charge == '' and production == '' and consumption == '' and state_of_charge == '' and h1_w == '':
+            #date, discharge, charge, production, consumption, state_of_charge, h1_w = row
+            date, discharge, charge, production, consumption, feed_in, from_grid, state_of_charge = row
+            if discharge == '' and charge == '' and production == '' and consumption == '' and feed_in == '' and from_grid == '': # and state_of_charge == '' and h1_w == '':
                 continue
             timestamp = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
             hour_key = (timestamp.date(), timestamp.hour)
@@ -37,8 +38,10 @@ def group_data(input_file): #per media
             hourly_data[hour_key]['charge'].append(float(charge))
             hourly_data[hour_key]['production'].append(float(production))
             hourly_data[hour_key]['consumption'].append(float(consumption))
-            hourly_data[hour_key]['state_of_charge'].append(float(state_of_charge))
-            hourly_data[hour_key]['h1_w'].append(float(h1_w))
+            hourly_data[hour_key]['feed_in'].append(float(feed_in))
+            hourly_data[hour_key]['from_grid'].append(float(from_grid))
+            #hourly_data[hour_key]['state_of_charge'].append(float(state_of_charge))
+            #hourly_data[hour_key]['h1_w'].append(float(h1_w))
             #if chargeInitValue == None:
             #    chargeInitValue = float(state_of_charge)
     return hourly_data
@@ -63,9 +66,17 @@ def build_from_csv(input_file, output_dir, split_data = SPLIT_DATA.NO_SPLIT, for
 
     for (date, hour), values in hourly_data.items():
         charge = sum(values['charge']) / len(values['charge'])
+        charge = round(charge, 1)
         discharge = sum(values['discharge']) / len(values['discharge'])
+        discharge = round(discharge, 1)
         production = sum(values['production']) / len(values['production'])
+        production = round(production, 1)
         consumption = sum(values['consumption']) / len(values['consumption'])
+        consumption = round(consumption, 1)
+        feed_in = sum(values['feed_in']) / len(values['feed_in'])
+        feed_in = round(feed_in, 1)
+        from_grid = sum(values['from_grid']) / len(values['from_grid'])
+        from_grid = round(from_grid, 1)
         stringToWrite = ""
         if format == FORMAT.ASP:
             '''if charge != 0:
@@ -77,11 +88,11 @@ def build_from_csv(input_file, output_dir, split_data = SPLIT_DATA.NO_SPLIT, for
                     f"vP_S(\"{date}\",{hour},{discharge * -10:.0f}).\n"
                 )'''
             stringToWrite += (
-                f"vP_PV(\"{date}\",{hour},{production * 10 / 1000:.0f}).\n"
-                f"vP_L(\"{date}\",{hour},{consumption * 10 / 1000:.0f}).\n"
+                f"vP_PV(\"{date}\",{hour},{production * 10:.0f}).\n"
+                f"vP_L(\"{date}\",{hour},{consumption * 10:.0f}).\n"
             )
         elif format == FORMAT.CSV:
-            stringToWrite += f"{date} {hour}:00:00,{discharge/1000:.1f},{charge/1000:.1f},{production/1000:.1f},{consumption/1000:.1f}\n"
+            stringToWrite += f"{date} {hour}:00:00,{discharge},{charge},{production},{consumption},{feed_in},{from_grid}\n"
 
         if split_data == SPLIT_DATA.DAY:
             if date not in outputParts:
@@ -95,7 +106,7 @@ def build_from_csv(input_file, output_dir, split_data = SPLIT_DATA.NO_SPLIT, for
         extension = ".asp"
     elif format == FORMAT.CSV:
         extension = ".csv"
-        header = "date,Discharge(W),Charge(W),Production(W),Consumption(W)\n"
+        header = "date,Discharge(W),Charge(W),Production(W),Consumption(W),Feed-in(W),From grid(W)\n"
 
     for key in outputParts:
         with open(output_dir + "/" + str(key) + extension, 'w') as outfile:

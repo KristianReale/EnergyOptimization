@@ -20,8 +20,8 @@ class TestExecution(unittest.TestCase):
         asp_to_cvs(solverResultsFilePath, resultsFiles)'''
 
     def test_build_results(self):
-        solverResultsFilePath = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1.txt"
-        resultsFiles = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1.csv"
+        solverResultsFilePath = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1_Wh.txt"
+        resultsFiles = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1_Wh.csv"
         asp_to_cvs(solverResultsFilePath, resultsFiles)
 
 if __name__ == '__main__':
