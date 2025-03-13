@@ -42,16 +42,14 @@ vCharge(D, I, 0) :- vP_G(D, I, C), C >= 0.
 %:~  vFeed_in(D, I, C). [-C@2, D, I]
 
 % Buy from grid
-buyMore("2020-01-01", 2, 350).
-buyMore("2020-01-01", 5, 450).
-buyMore("2020-01-01", 10, 20).
-buyMore("2020-01-01", 11, 200).
+buyMore("2020-01-01", "2:15", 350).
+buyMore("2020-01-01", "9:0", 450).
+buyMore("2020-01-01", "12:45", 20).
+buyMore("2020-01-01", "21:30", 200).
 existsBuyMore(D, I) :- buyMore(D, I, M), M > 0.
 buyMore(D, I, 0) :- not existsBuyMore(D, I), date(D), time(I).
 vFrom_grid(D, I, M) :- vP_G(D, I, C), buyMore(D, I, M), C < 0.
 vFrom_grid(D, I, M + C) :- vP_G(D, I, C), buyMore(D, I, M), C >= 0.
-%existsFrom_grid(D, I) :- vFrom_grid(D, I, C), C != 0.
-%vFrom_grid(D, I, 0) :- not existsFrom_grid(D, I), date(D), time(I).
 
 
 %% E_Smin <= E_S_t_d + P_S_t_d * deltaT <= E_Smax

@@ -18,7 +18,7 @@ class FORMAT(Enum):
     ASP = 1
     CSV = 2
 
-def group_data(input_file): #per media
+def group_data(input_file, minute_granularity=60): #per media
     hourly_data = defaultdict(
         lambda: {'discharge': [], 'charge': [], 'production': [], 'consumption': [], 'feed_in': [], 'from_grid': [], 'state_of_charge': [], 'h1_w': []})
     with open(input_file, 'r') as csvfile:
@@ -32,22 +32,35 @@ def group_data(input_file): #per media
             if discharge == '' and charge == '' and production == '' and consumption == '' and feed_in == '' and from_grid == '': # and state_of_charge == '' and h1_w == '':
                 continue
             timestamp = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
-            hour_key = (timestamp.date(), timestamp.hour)
+            key = None
+            if minute_granularity == 60:
+                key = (timestamp.date(), str(timestamp.hour))
+            elif minute_granularity < 60:
+                hourKey = timestamp.hour
+                minuteKey = None
+                if (timestamp.minute == 0) or (timestamp.minute % minute_granularity) == 0:
+                    minuteKey = timestamp.minute
+                else:
+                    minuteKey = (((timestamp.minute + minute_granularity) // minute_granularity) * minute_granularity) % 60
+                    if minuteKey == 0:
+                        hourKey += 1
+                key = (timestamp.date(), str(hourKey) + ":" + str(minuteKey))
 
-            hourly_data[hour_key]['discharge'].append(float(discharge))
-            hourly_data[hour_key]['charge'].append(float(charge))
-            hourly_data[hour_key]['production'].append(float(production))
-            hourly_data[hour_key]['consumption'].append(float(consumption))
-            hourly_data[hour_key]['feed_in'].append(float(feed_in))
-            hourly_data[hour_key]['from_grid'].append(float(from_grid))
+            hourly_data[key]['discharge'].append(float(discharge))
+            hourly_data[key]['charge'].append(float(charge))
+            hourly_data[key]['production'].append(float(production))
+            hourly_data[key]['consumption'].append(float(consumption))
+            hourly_data[key]['feed_in'].append(float(feed_in))
+            hourly_data[key]['from_grid'].append(float(from_grid))
             #hourly_data[hour_key]['state_of_charge'].append(float(state_of_charge))
             #hourly_data[hour_key]['h1_w'].append(float(h1_w))
             #if chargeInitValue == None:
             #    chargeInitValue = float(state_of_charge)
     return hourly_data
 
-def build_from_csv(input_file, output_dir, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP):
-    hourly_data = group_data(input_file)
+def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP):
+    hourly_data = None
+    hourly_data = group_data(input_file, minute_granularity)
     chargeInitValue = 0 #cambiare
 
 
@@ -64,7 +77,7 @@ def build_from_csv(input_file, output_dir, split_data = SPLIT_DATA.NO_SPLIT, for
     os.makedirs(output_dir, exist_ok=True)
     outputParts = {}
 
-    for (date, hour), values in hourly_data.items():
+    for (date, time), values in hourly_data.items():
         charge = sum(values['charge']) / len(values['charge'])
         charge = round(charge, 1)
         discharge = sum(values['discharge']) / len(values['discharge'])
@@ -79,20 +92,15 @@ def build_from_csv(input_file, output_dir, split_data = SPLIT_DATA.NO_SPLIT, for
         from_grid = round(from_grid, 1)
         stringToWrite = ""
         if format == FORMAT.ASP:
-            '''if charge != 0:
-                stringToWrite += (
-                    f"vP_S(\"{date}\",{hour},{charge * 10:.0f}).\n"
-                )
-            if discharge != 0:
-                stringToWrite += (
-                    f"vP_S(\"{date}\",{hour},{discharge * -10:.0f}).\n"
-                )'''
             stringToWrite += (
-                f"vP_PV(\"{date}\",{hour},{production * 10:.0f}).\n"
-                f"vP_L(\"{date}\",{hour},{consumption * 10:.0f}).\n"
+                f"vP_PV(\"{date}\",\"{time}\",{production * 10:.0f}).\n"
+                f"vP_L(\"{date}\",\"{time}\",{consumption * 10:.0f}).\n"
             )
         elif format == FORMAT.CSV:
-            stringToWrite += f"{date} {hour}:00:00,{discharge},{charge},{production},{consumption},{feed_in},{from_grid}\n"
+            minutes_seconds = "00:00"
+            if (minute_granularity % 60) != 0:
+                minutes_seconds = "00"
+            stringToWrite += f"{date} {time}:{minutes_seconds},{discharge},{charge},{production},{consumption},{feed_in},{from_grid}\n"
 
         if split_data == SPLIT_DATA.DAY:
             if date not in outputParts:
@@ -120,15 +128,15 @@ def asp_to_cvs(input_file, output_file):
         results = best_grid_transfer_results_parse(in_f.read())
         out_f.write("date,Discharge(W),Charge(W),Production(W),Consumption(W),Feed-in(W),From grid(W)\n")#,State of Charge( %)")
         for cont in range(len(results["P_L"])):
-            date = results["P_L"][cont]["day"].replace("\"", "") + " " + results["P_L"][cont]["time"] + ":00:00"
+            date = results["P_L"][cont]["day"].replace("\"", "") + " " + results["P_L"][cont]["time"] + ":00"
             #discharge = float(results["P_S"][cont]["value"]) / 10 if float(results["P_S"][cont]["value"]) > 0 else 0
             #charge = float(results["P_S"][cont]["value"]) / 10 if float(results["P_S"][cont]["value"]) < 0 else 0
-            charge = float(results["Charge"][cont]["value"]) / 10
-            discharge = float(results["Discharge"][cont]["value"]) / 10
-            production = float(results["P_PV"][cont]["value"]) / 10
-            consumption = float(results["P_L"][cont]["value"]) / 10
-            feedin = float(results["Feed-in"][cont]["value"]) / 10
-            fromgrid = float(results["From grid"][cont]["value"]) / 10
+            charge = float(results["Charge"][cont]["value"]) #/ 10
+            discharge = float(results["Discharge"][cont]["value"])# / 10
+            production = float(results["P_PV"][cont]["value"]) #/ 10
+            consumption = float(results["P_L"][cont]["value"])# / 10
+            feedin = float(results["Feed-in"][cont]["value"])# / 10
+            fromgrid = float(results["From grid"][cont]["value"])# / 10
             out_f.write(f"{date},{discharge},{charge},{production},{consumption},{feedin},{fromgrid}\n")
 
 

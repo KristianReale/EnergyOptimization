@@ -1,12 +1,14 @@
 import subprocess
 import re
 import os
+import tempfile
 from datetime import datetime
 
-DLV_PATH = os.path.dirname(os.path.abspath(__file__)) + "/../solver/DLV/macosx/dlv-2.1.2-arm64"
-ASP_PROGRAM_PATH = os.path.dirname(os.path.abspath(__file__)) + "/../asp_encodings/simplified/encoding_article.asp"
+ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+DLV_PATH = ROOT_PATH + "/../solver/DLV/macosx/dlv-2.1.2-arm64"
+ASP_PROGRAM_PATH = ROOT_PATH + "/../asp_encodings/simplified/encoding_article.asp"
 #ASP_PROGRAM_PATH = "asp_encodings/simplified/encoding.asp"
-ASP_PARAMS_PATH = os.path.dirname(os.path.abspath(__file__)) + "/../asp_encodings/simplified/params.asp"
+ASP_PARAMS_PATH = ROOT_PATH + "/../asp_encodings/simplified/params.asp"
 
 def calculate_best_storage(P, Q, PUN, PZ, CREG_PLUS, POFF_PLUS, CREG_MINUS, POFF_MINUS):
     command = [DLV_PATH, ASP_PROGRAM_PATH, ASP_PARAMS_PATH, "--silent"]
@@ -189,16 +191,28 @@ def calculate_best_storage(P, Q, PUN, PZ, CREG_PLUS, POFF_PLUS, CREG_MINUS, POFF
     return object_result
 
 # SIMPLIFIED PHASE
-def calculate_best_grid_transfer(esinit, factsFiles = None, saveResultsFile = None):
-    if factsFiles is None:
+def calculate_best_grid_transfer(building, esinit, date, saveResultsFile = None):
+    factsFile = None
+    initFile = None
+    with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as tmp:
+        print(tmp.name)
+        tmp.write(f"vE_Sinit({esinit}).")
+        initFile = tmp.name
+
+    if building == "H1":
+        factsFile = f"{ROOT_PATH}/../Dataset/InputDataset/H1_15min_Wh/{date}.asp"
+    print(factsFile)
+    if factsFile is None:
         command = [DLV_PATH, ASP_PROGRAM_PATH, ASP_PARAMS_PATH, "--silent"]
     else:
-        command = [DLV_PATH, ASP_PROGRAM_PATH, *factsFiles, ASP_PARAMS_PATH, "--silent"]
-
+        command = ["clingo", ASP_PROGRAM_PATH, factsFile, initFile, ASP_PARAMS_PATH, "--models=1"]
+    print(*command)
     response = subprocess.run(command, capture_output=True, text=True)
     if saveResultsFile is not None:
         with open(saveResultsFile, "w+") as f:
             f.write(response.stdout)
+    else:
+        print(response.stdout)
     return best_grid_transfer_results_parse(response.stdout)
 
 def best_grid_transfer_results_parse(result):
@@ -231,8 +245,8 @@ def best_grid_transfer_results_parse(result):
             valori.append("")
 
         # Creare un oggetto VP_PV con i valori estratti
-        vP_L_results.append({"day" : valori[0], "time" : valori[1], "value" : valori[2]})
-    vP_L_results = sorted(vP_L_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
+        vP_L_results.append({"day" : valori[0].replace("\"", ""), "time" : valori[1].replace("\"", ""), "value" : float(valori[2])/ 10})
+    vP_L_results = sorted(vP_L_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:0", "23:59"), "%H:%M")))
 
     vP_PV_results = []
     for match in matches_vP_PV:
@@ -245,8 +259,8 @@ def best_grid_transfer_results_parse(result):
             valori.append("")
 
         # Creare un oggetto VP_PV con i valori estratti
-        vP_PV_results.append({"day": valori[0], "time": valori[1], "value": valori[2]})
-    vP_PV_results = sorted(vP_PV_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
+        vP_PV_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2])/ 10})
+    vP_PV_results = sorted(vP_PV_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:0", "23:59"), "%H:%M")))
 
     vP_S_results = []
     for match in matches_vP_S:
@@ -259,8 +273,8 @@ def best_grid_transfer_results_parse(result):
             valori.append("")
 
         # Creare un oggetto VP_PV con i valori estratti
-        vP_S_results.append({"day": valori[0], "time": valori[1], "value": valori[2]})
-    vP_S_results = sorted(vP_S_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
+        vP_S_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2])/ 10})
+    vP_S_results = sorted(vP_S_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:0", "23:59"), "%H:%M")))
 
     charge_results = []
     for match in matches_charge:
@@ -273,8 +287,8 @@ def best_grid_transfer_results_parse(result):
             valori.append("")
 
         # Creare un oggetto VP_PV con i valori estratti
-        charge_results.append({"day": valori[0], "time": valori[1], "value": valori[2]})
-    charge_results = sorted(charge_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
+        charge_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2])/ 10})
+    charge_results = sorted(charge_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:0", "23:59"), "%H:%M")))
 
     discharge_results = []
     for match in matches_discharge:
@@ -287,8 +301,8 @@ def best_grid_transfer_results_parse(result):
             valori.append("")
 
         # Creare un oggetto VP_PV con i valori estratti
-        discharge_results.append({"day": valori[0], "time": valori[1], "value": valori[2]})
-    discharge_results = sorted(discharge_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
+        discharge_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2])/ 10})
+    discharge_results = sorted(discharge_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:0", "23:59"), "%H:%M")))
 
     feed_in_results = []
     for match in matches_feed_in:
@@ -301,8 +315,8 @@ def best_grid_transfer_results_parse(result):
             valori.append("")
 
         # Creare un oggetto VP_PV con i valori estratti
-        feed_in_results.append({"day": valori[0], "time": valori[1], "value": valori[2]})
-    feed_in_results = sorted(feed_in_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
+        feed_in_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2])/ 10})
+    feed_in_results = sorted(feed_in_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:0", "23:59"), "%H:%M")))
 
     from_grid_results = []
     for match in matches_from_grid:
@@ -315,8 +329,8 @@ def best_grid_transfer_results_parse(result):
             valori.append("")
 
         # Creare un oggetto VP_PV con i valori estratti
-        from_grid_results.append({"day": valori[0], "time": valori[1], "value": valori[2]})
-    from_grid_results = sorted(from_grid_results, key=lambda k: (k["day"], datetime.strptime(k["time"], "%H")))
+        from_grid_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2])/ 10})
+    from_grid_results = sorted(from_grid_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:0", "23:59"), "%H:%M")))
 
     object_result = {"P_L": vP_L_results, "P_PV": vP_PV_results, "P_S": vP_S_results, "Charge": charge_results,
                      "Discharge": discharge_results, "Feed-in" : feed_in_results, "From grid": from_grid_results}
