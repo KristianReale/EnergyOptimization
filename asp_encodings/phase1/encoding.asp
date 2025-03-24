@@ -71,7 +71,7 @@ vGUESS(0..999).
 
 %% CAP_TOT_MIN_1 <= SSOC_I + S_IP1 - S_IM1 <= CAP_TOT_MAX_1
 %vSOC(I + 1, SOC_I1) :- vSOC(I, SOC_I), SOC_I1 = SOC_I + S_IP1 - S_IM1, vS_P1(D, I, S_IP1), vS_M1(D, I, S_IM1).
-:- vSOC(I, SOC_I), #sum{S_IP1,1: vS_P1(D, I, S_IP1); -S_IM1,2: vS_M1(D, I, S_IM1)} > CAP_TOT_MAX_1 - SOC_I,  vCapTotMax_1(CAP_TOT_MAX_1). 
+:- vSOC(D, I, SOC_I), #sum{S_IP1,J,1: vS_P1(D, J, S_IP1), J < I; -S_IM1,I,2: vS_M1(D, J, S_IM1), J < I} > CAP_TOT_MAX_1 - SOC_I,  vCapTotMax_1(CAP_TOT_MAX_1).
 %%%:- vSOC(I, SOC_I), SOC_I + S_IP1 - S_IM1 > CAP_TOT_MAX_1, vS_P1(D, I, S_IP1), vS_M1(D, I, S_IM1), vCapTotMax_1(CAP_TOT_MAX_1).
 
 %% EMinS1 <= E_IP1 - E_IM1 <= EMaxS1
@@ -81,7 +81,7 @@ vGUESS(0..999).
 
 %% CAP_TOT_MIN_S1 <= SOC_SI + E_IP1 - E_IM1 <= CAP_TOT_MAX_S1
 % vSOC_S(I + 1, SOC_SI1) :- vSOC_S(I, SOC_SI), SOC_SI1 = SOC_SI + E_IP1 - E_IM1, vE_P1(D, I, E_IP1), vE_M1(D, I, E_IM1).
-:- #sum{E_IP1,1 : vE_P1(D, I, E_IP1); -E_IM1,2: vE_M1(D, I, E_IM1)} > CAP_TOT_MAX_S1 - SOC_SI, vSOC_S(I, SOC_SI), vCapTotMax_S1(CAP_TOT_MAX_S1).
+:- #sum{E_IP1, J, 1 : vE_P1(D, J, E_IP1), J < I; -E_IM1, J, 2: vE_M1(D, J, E_IM1), J < I} > CAP_TOT_MAX_S1 - SOC_SI, vSOC_S(D, I, SOC_SI), vCapTotMax_S1(CAP_TOT_MAX_S1).
 %%%:- vSOC_S(I, SOC_SI), SOC_SI + E_IP1 - E_IM1 > CAP_TOT_MAX_S1, vE_P1(D, I, E_IP1), vE_M1(D, I, E_IM1), vCapTotMax_S1(CAP_TOT_MAX_S1).
 
 %% 0 <= Percentage_Ps1 <= 1 

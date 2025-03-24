@@ -91,15 +91,15 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
         from_grid = sum(values['from_grid']) / len(values['from_grid'])
         from_grid = round(from_grid, 1)
         stringToWrite = ""
+        minutes_seconds = "00:00"
+        if (minute_granularity % 60) != 0:
+            minutes_seconds = "00"
         if format == FORMAT.ASP:
             stringToWrite += (
-                f"vP_PV(\"{date}\",\"{time}\",{production * 10:.0f}).\n"
-                f"vP_L(\"{date}\",\"{time}\",{consumption * 10:.0f}).\n"
+                f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 10:.0f}).\n"
+                f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10:.0f}).\n"
             )
         elif format == FORMAT.CSV:
-            minutes_seconds = "00:00"
-            if (minute_granularity % 60) != 0:
-                minutes_seconds = "00"
             stringToWrite += f"{date} {time}:{minutes_seconds},{discharge},{charge},{production},{consumption},{feed_in},{from_grid}\n"
 
         if split_data == SPLIT_DATA.DAY:
@@ -128,7 +128,7 @@ def asp_to_cvs(input_file, output_file):
         results = best_grid_transfer_results_parse(in_f.read())
         out_f.write("date,Discharge(W),Charge(W),Production(W),Consumption(W),Feed-in(W),From grid(W)\n")#,State of Charge( %)")
         for cont in range(len(results["P_L"])):
-            date = results["P_L"][cont]["day"].replace("\"", "") + " " + results["P_L"][cont]["time"] + ":00"
+            date = results["P_L"][cont]["day"].replace("\"", "") + " " + results["P_L"][cont]["time"]
             #discharge = float(results["P_S"][cont]["value"]) / 10 if float(results["P_S"][cont]["value"]) > 0 else 0
             #charge = float(results["P_S"][cont]["value"]) / 10 if float(results["P_S"][cont]["value"]) < 0 else 0
             charge = float(results["Charge"][cont]["value"]) #/ 10
