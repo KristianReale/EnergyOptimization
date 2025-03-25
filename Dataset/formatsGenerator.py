@@ -77,6 +77,7 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
     os.makedirs(output_dir, exist_ok=True)
     outputParts = {}
 
+    counterTime = 1
     for (date, time), values in hourly_data.items():
         charge = sum(values['charge']) / len(values['charge'])
         charge = round(charge, 1)
@@ -96,6 +97,7 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
             minutes_seconds = "00"
         if format == FORMAT.ASP:
             stringToWrite += (
+                f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"
                 f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 10:.0f}).\n"
                 f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10:.0f}).\n"
             )
@@ -107,6 +109,7 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                 outputParts[date] = stringToWrite
             else:
                 outputParts[date] += stringToWrite
+        counterTime += 1
 
     extension = ".asp"
     header = None

@@ -2,7 +2,7 @@ vGUESS(0..99).
 
 %time(0..2). date("2020-01-01").
 date(D) :- vP_L(D, I, P_L).
-time(I) :- vP_L(D, I, P_L).
+%time(I) :- vP_L(D, I, P_L).
 
 %%%%  GUESS VARIABILI DI DECISIONE
 % INPUT
@@ -12,7 +12,7 @@ time(I) :- vP_L(D, I, P_L).
 % {vP_S(D, I, P_S): vGUESS(P_S)} = 1 :- time(I), date(D).
 % {vCharge(D, I, P_S): vGUESS(P_S)} = 1 :- time(I), date(D).
 %%{vDischarge(D, I, P_S): vGUESS(P_S), vP_Smin(P_Smin), vP_Smax(P_Smax), P_S >= P_Smin, P_S <= P_Smax} = 1 :- time(I), date(D).
-{vDischarge(D, I, P_S): vGUESS(P_S)} = 1 :- time(I), date(D).
+{vDischarge(D, T, P_S): vGUESS(P_S)} = 1 :- time(I, T), date(D).
 
 
 
@@ -36,17 +36,17 @@ vFeed_in(D, I, 0) :- vP_G(D, I, C), C >= 0.
 vCharge(D, I, 0) :- vP_G(D, I, C), C >= 0.
 
 % If buy from grid
-existsBuyMore(D, I) :- buyMore(D, I, M), M > 0.
-buyMore(D, I, 0) :- not existsBuyMore(D, I), date(D), time(I).
+existsBuyMore(D, T) :- buyMore(D, T, M), M > 0.
+buyMore(D, T, 0) :- not existsBuyMore(D, I), date(D), time(I, T).
 vFrom_grid(D, I, M) :- vP_G(D, I, C), buyMore(D, I, M), C < 0.
 vFrom_grid(D, I, M + C) :- vP_G(D, I, C), buyMore(D, I, M), C >= 0.
 
 
 %%%% VINCOLI
 % vDischarge only residual energy
-:- vDischarge(D, I, DIS), DIS - E_Sinit > #sum{-P_S1, J, 1: vDischarge(D, J, P_S1), J < I; P_S2, J, 2: vCharge(D, J, P_S2), J < I}, vE_Sinit(E_Sinit).
-:- vDischarge(D, I, DIS), vE_Smax(E_Smax), #sum{-P_S1, J, 1: vDischarge(D, J, P_S1), J < I; P_S2, J, 2: vCharge(D, J, P_S2), J < I} > E_Smax - E_Sinit, vE_Sinit(E_Sinit).
-:- vDischarge(D, I, DIS), vE_Smin(E_Smin), #sum{-P_S1, J, 1: vDischarge(D, J, P_S1), J < I; P_S2, J, 2: vCharge(D, J, P_S2), J < I} < E_Smin - E_Sinit, vE_Sinit(E_Sinit).
+:- time(I, T1), vDischarge(D, T1, DIS), DIS - E_Sinit > #sum{-P_S1, J, 1: vDischarge(D, T2, P_S1), time(J, T2), J < I; P_S2, J, 2: vCharge(D, T2, P_S2), time(J, T2), J < I}, vE_Sinit(E_Sinit).
+:- time(I, T1), vDischarge(D, T1, DIS), vE_Smax(E_Smax), #sum{-P_S1, J, 1: vDischarge(D, T2, P_S1), time(J, T2),J < I; P_S2, J, 2: vCharge(D, T2, P_S2), time(J, T2), J < I} > E_Smax - E_Sinit, vE_Sinit(E_Sinit).
+:- time(I, T1), vDischarge(D, T1, DIS), vE_Smin(E_Smin), #sum{-P_S1, J, 1: vDischarge(D, T2, P_S1), time(J, T2), J < I; P_S2, J, 2: vCharge(D, T2, P_S2), time(J, T2), J < I} < E_Smin - E_Sinit, vE_Sinit(E_Sinit).
 
 %% E_Smin <= E_S_t_d + P_S_t_d * deltaT <= E_Smax
 %:- E_Smin - E_Sinit  > #sum{P_SP: vP_S(D, I, P_S), P_SP = P_S * I}, date(D), vE_Sinit(E_Sinit), vE_Smin(E_Smin).
