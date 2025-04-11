@@ -58,7 +58,7 @@ def group_data(input_file, minute_granularity=60): #per media
             #    chargeInitValue = float(state_of_charge)
     return hourly_data
 
-def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP):
+def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP, unit ="W"):
     hourly_data = None
     hourly_data = group_data(input_file, minute_granularity)
     chargeInitValue = 0 #cambiare
@@ -79,28 +79,60 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
 
     counterTime = 1
     for (date, time), values in hourly_data.items():
-        charge = sum(values['charge']) / len(values['charge'])
-        charge = round(charge, 1)
-        discharge = sum(values['discharge']) / len(values['discharge'])
-        discharge = round(discharge, 1)
-        production = sum(values['production']) / len(values['production'])
-        production = round(production, 1)
-        consumption = sum(values['consumption']) / len(values['consumption'])
-        consumption = round(consumption, 1)
-        feed_in = sum(values['feed_in']) / len(values['feed_in'])
-        feed_in = round(feed_in, 1)
-        from_grid = sum(values['from_grid']) / len(values['from_grid'])
-        from_grid = round(from_grid, 1)
+        charge = sum(values['charge']) # / len(values['charge'])
+        if unit == "KW":
+            charge = charge / 1000
+            charge = round(charge, 2)
+        else:
+            charge = round(charge, 1)
+        discharge = sum(values['discharge']) #/ len(values['discharge'])
+        if unit == "KW":
+            discharge = discharge / 1000
+            discharge = round(discharge, 2)
+        else:
+            discharge = round(discharge, 1)
+
+        production = sum(values['production']) #/ len(values['production'])
+        if unit == "KW":
+            production = production / 1000
+            production = round(production, 2)
+        else:
+            production = round(production, 1)
+        consumption = sum(values['consumption']) #/ len(values['consumption'])
+        if unit == "KW":
+            consumption = consumption / 1000
+            consumption = round(consumption, 2)
+        else:
+            consumption = round(consumption, 1)
+        feed_in = sum(values['feed_in']) #/ len(values['feed_in'])
+        if unit == "KW":
+            feed_in = feed_in / 1000
+            feed_in = round(feed_in, 2)
+        else:
+            feed_in = round(feed_in, 1)
+        from_grid = sum(values['from_grid']) #/ len(values['from_grid'])
+        if unit == "KW":
+            from_grid = from_grid / 1000
+            from_grid = round(from_grid, 2)
+        else:
+            from_grid = round(from_grid, 1)
         stringToWrite = ""
         minutes_seconds = "00:00"
         if (minute_granularity % 60) != 0:
             minutes_seconds = "00"
         if format == FORMAT.ASP:
-            stringToWrite += (
-                f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"
-                f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 10:.0f}).\n"
-                f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10:.0f}).\n"
-            )
+            if unit == "KW":
+                stringToWrite += (
+                    f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"                    
+                    f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 100:.00f}).\n"
+                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 100:.00f}).\n"
+                )
+            else:
+                stringToWrite += (
+                    f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"
+                    f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 10:.0f}).\n"
+                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10:.0f}).\n"
+                )
         elif format == FORMAT.CSV:
             stringToWrite += f"{date} {time}:{minutes_seconds},{discharge},{charge},{production},{consumption},{feed_in},{from_grid}\n"
 
@@ -117,7 +149,10 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
         extension = ".asp"
     elif format == FORMAT.CSV:
         extension = ".csv"
-        header = "date,Discharge(W),Charge(W),Production(W),Consumption(W),Feed-in(W),From grid(W)\n"
+        if unit == "KW":
+            header = "date,Discharge(KW),Charge(KW),Production(KW),Consumption(KW),Feed-in(KW),From grid(KW)\n"
+        else:
+            header = "date,Discharge(W),Charge(W),Production(W),Consumption(W),Feed-in(W),From grid(W)\n"
 
     for key in outputParts:
         with open(output_dir + "/" + str(key) + extension, 'w') as outfile:
@@ -125,11 +160,15 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                 outfile.write(header)
             outfile.write(outputParts[key])
 
-def asp_to_cvs(input_file, output_file):
+def asp_to_cvs(input_file, output_file, unit ="W"):
     with open(input_file, 'r') as in_f, open(output_file, 'w') as out_f:
         #{"P_L": vP_L_results, "P_PV": vP_PV_results, "P_S": vP_S_results}
-        results = best_grid_transfer_results_parse(in_f.read())
-        out_f.write("date,Discharge(W),Charge(W),Production(W),Consumption(W),Feed-in(W),From grid(W)\n")#,State of Charge( %)")
+        results = best_grid_transfer_results_parse(in_f.read(), unit)
+        if unit == "KW":
+            out_f.write(
+                "date,Discharge(KW),Charge(KW),Production(KW),Consumption(KW),Feed-in(KW),From grid(KW)\n")  # ,State of Charge( %)")
+        else:
+            out_f.write("date,Discharge(W),Charge(W),Production(W),Consumption(W),Feed-in(W),From grid(W)\n")#,State of Charge( %)")
         for cont in range(len(results["P_L"])):
             date = results["P_L"][cont]["day"].replace("\"", "") + " " + results["P_L"][cont]["time"]
             #discharge = float(results["P_S"][cont]["value"]) / 10 if float(results["P_S"][cont]["value"]) > 0 else 0

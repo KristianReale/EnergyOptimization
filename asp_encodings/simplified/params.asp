@@ -1,7 +1,14 @@
-vE_Smin(0).
-vE_Smax(100000).
-vP_Smin(0).
-vP_Smax(500).
+vE_SminPercentage(5).
+vE_SmaxPercentage(100).
+vDischargeMinPercentage(0).
+vDischargeMaxPercentage(100).
+maxChargeKWh(1000).
+
+vE_Smin(X) :- X = P * M / 100, maxChargeKWh(M), vE_SminPercentage(P).
+vE_Smax(X) :- X = P * M / 100, maxChargeKWh(M), vE_SmaxPercentage(P).
+vP_Smin(X) :- X = P * M / 100, maxChargeKWh(M), vDischargeMinPercentage(P).
+vP_Smax(X) :- X = P * M / 100, maxChargeKWh(M), vDischargeMaxPercentage(P).
+vE_Sinit(X) :- X = P * M / 100, maxChargeKWh(M), vE_SinitPercentage(P).
 
 
 %buyMore("2020-01-01", "2:15", 350).

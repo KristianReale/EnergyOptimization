@@ -20,11 +20,11 @@ class TestExecution(unittest.TestCase):
         asp_to_cvs(solverResultsFilePath, resultsFiles)'''
 
     def test_build_results(self):
-        solverResultsFilePath = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1_Wh.txt"
-        resultsFiles = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1_Wh.csv"
+        solverResultsFilePath = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1_Wh_limit.txt"
+        resultsFiles = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1_Wh_limit.csv"
         #solverResultsFilePath = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1_15min_Wh/H1_15min_Wh.txt"
         #resultsFiles = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1_15min_Wh/H1_15min_Wh.csv"
-        asp_to_cvs(solverResultsFilePath, resultsFiles)
+        asp_to_cvs(solverResultsFilePath, resultsFiles, unit="KW")
 
 if __name__ == '__main__':
     unittest.main()
