@@ -29,7 +29,7 @@ def group_data(input_file, minute_granularity=60): #per media
             #print(row)
             #date, discharge, charge, production, consumption, state_of_charge, h1_w = row
             date, discharge, charge, production, consumption, feed_in, from_grid, state_of_charge = row
-            if discharge == '' and charge == '' and production == '' and consumption == '' and feed_in == '' and from_grid == '': # and state_of_charge == '' and h1_w == '':
+            if discharge == '' and charge == '' and production == '' and consumption == '' and feed_in == '' and from_grid == '' and state_of_charge == '': # and h1_w == '':
                 continue
             timestamp = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
             key = None
@@ -52,17 +52,14 @@ def group_data(input_file, minute_granularity=60): #per media
             hourly_data[key]['consumption'].append(float(consumption))
             hourly_data[key]['feed_in'].append(float(feed_in))
             hourly_data[key]['from_grid'].append(float(from_grid))
-            #hourly_data[hour_key]['state_of_charge'].append(float(state_of_charge))
+            hourly_data[key]['state_of_charge'].append(float(state_of_charge))
             #hourly_data[hour_key]['h1_w'].append(float(h1_w))
             #if chargeInitValue == None:
             #    chargeInitValue = float(state_of_charge)
     return hourly_data
 
 def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP, unit ="W"):
-    hourly_data = None
     hourly_data = group_data(input_file, minute_granularity)
-    chargeInitValue = 0 #cambiare
-
 
     '''for (date, hour), values in hourly_data.items():
         fact_str += (
@@ -78,7 +75,14 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
     outputParts = {}
 
     counterTime = 1
+    currentDate = None
     for (date, time), values in hourly_data.items():
+        if currentDate == None:
+            currentDate = date
+        elif currentDate != date:
+            currentDate = date
+            counterTime = 1
+
         charge = sum(values['charge']) # / len(values['charge'])
         if unit == "KW":
             charge = charge / 1000
@@ -116,11 +120,16 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
             from_grid = round(from_grid, 2)
         else:
             from_grid = round(from_grid, 1)
+        state_of_charge = values['state_of_charge'][0]
         stringToWrite = ""
         minutes_seconds = "00:00"
         if (minute_granularity % 60) != 0:
             minutes_seconds = "00"
         if format == FORMAT.ASP:
+            if counterTime == 1:
+                stringToWrite += (
+                    f"vE_SinitPercentage({round(state_of_charge)}).\n"
+                )
             if unit == "KW":
                 stringToWrite += (
                     f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"                    
@@ -134,7 +143,7 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                     f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10:.0f}).\n"
                 )
         elif format == FORMAT.CSV:
-            stringToWrite += f"{date} {time}:{minutes_seconds},{discharge},{charge},{production},{consumption},{feed_in},{from_grid}\n"
+            stringToWrite += f"{date} {time}:{minutes_seconds},{discharge},{charge},{production},{consumption},{feed_in},{from_grid},{state_of_charge}\n"
 
         if split_data == SPLIT_DATA.DAY:
             if date not in outputParts:
@@ -150,9 +159,9 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
     elif format == FORMAT.CSV:
         extension = ".csv"
         if unit == "KW":
-            header = "date,Discharge(KW),Charge(KW),Production(KW),Consumption(KW),Feed-in(KW),From grid(KW)\n"
+            header = "date,Discharge(KW),Charge(KW),Production(KW),Consumption(KW),Feed-in(KW),From grid(KW),State of Charge(%)\n"
         else:
-            header = "date,Discharge(W),Charge(W),Production(W),Consumption(W),Feed-in(W),From grid(W)\n"
+            header = "date,Discharge(W),Charge(W),Production(W),Consumption(W),Feed-in(W),From grid(W),State of Charge(%)\n"
 
     for key in outputParts:
         with open(output_dir + "/" + str(key) + extension, 'w') as outfile:
