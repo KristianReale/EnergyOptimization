@@ -193,11 +193,13 @@ def asp_to_cvs(input_file, output_file, unit ="W"):
             fromgrid = float(results["From grid"][cont]["value"])# / 10
             out_f.write(f"{date},{discharge},{charge},{production},{consumption},{feedin},{fromgrid}\n")
 
+
+
 def generate_final_excel():
     resultsFolder = os.path.dirname(os.path.abspath(__file__)) + f"/Results"
     house_list = [f for f in os.listdir(resultsFolder) if os.path.isdir(os.path.join(resultsFolder, f))]
     for house in house_list:
-        excel_file = resultsFolder + f"/{house}/analysis.xlsx"
+        excel_file = resultsFolder + f"/{house}/analysis_{house}.xlsx"
         wb = Workbook()
         wb.remove(wb.active)
         file_list = sorted([f for f in os.listdir(os.path.dirname(os.path.abspath(__file__)) + f"/Results/{house}") if f.startswith("output")])

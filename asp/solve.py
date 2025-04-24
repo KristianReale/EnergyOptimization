@@ -2,6 +2,7 @@ import subprocess
 import re
 import os
 import tempfile
+from collections import OrderedDict
 from datetime import datetime
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -212,29 +213,36 @@ def best_storage_results_parse(result):
     return object_result
 
 # SIMPLIFIED PHASE
-def calculate_best_grid_transfer(building, esinit, date, saveResultsFile = None):
-    factsFile = None
-    initFile = None
+def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption):
+
     with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as tmp:
         print(tmp.name)
-        tmp.write(f"vE_Sinit({esinit * 10}).")
-        initFile = tmp.name
+        factsFile = tmp.name
+        tmp.write(f"vE_SinitPercentage({init_charge_percentage}).\n")
 
-    if building == "H1":
-        factsFile = f"{ROOT_PATH}/../Dataset/InputDataset/H1_15min_Wh/{date}.asp"
-    print(factsFile)
-    if factsFile is None:
-        command = [DLV_PATH, ASP_PROGRAM_PATH, ASP_PARAMS_PATH, "--silent"]
-    else:
-        command = ["clingo", ASP_PROGRAM_PATH, factsFile, initFile, ASP_PARAMS_PATH, "--models=1"]
+        if unit == "kWh":
+            counterTime = 1
+            for prod in production:
+                time_value = prod["time"]
+                prod_value = prod['value']
+                cons_value = next((item["value"] for item in consumption if item["time"] == time_value), None)
+                tmp.write(f"time({counterTime}, \"{time_value}:00\").\n")
+                tmp.write(f"vP_PV(\"{date}\",\"{time_value}:00\",{prod_value * 100:.00f}).\n")
+                tmp.write(f"vP_L(\"{date}\",\"{time_value}:00\",{cons_value * 100:.00f}).\n")
+                counterTime += 1
+
+
+    command = ["clingo", ASP_PROGRAM_PATH, factsFile, factsFile, ASP_PARAMS_PATH, "--models=1"]
     print(*command)
     response = subprocess.run(command, capture_output=True, text=True)
-    if saveResultsFile is not None:
+    '''if saveResultsFile is not None:
         with open(saveResultsFile, "w+") as f:
             f.write(response.stdout)
     else:
-        print(response.stdout)
-    return best_grid_transfer_results_parse(response.stdout)
+        print(response.stdout)'''
+
+    return asp_to_json(response.stdout)
+    #return response.stdout
 
 def best_grid_transfer_results_parse(result, unit="W"):
     #result = "{vP_L(1,1,0), vP_L(1,2,0), vP_L(1,3,0), vP_L(1,4,0), vP_L(1,5,0), vP_L(1,6,0), vP_L(1,7,0), vP_L(1,8,0), vP_L(1,9,0), vP_L(1,10,0), vP_L(1,11,0), vP_L(1,12,0), vP_L(1,13,0), vP_L(1,14,0), vP_L(1,15,0), vP_L(1,16,0), vP_L(1,17,0), vP_L(1,18,0), vP_L(1,19,0), vP_L(1,20,0), vP_L(1,21,0), vP_L(1,22,0), vP_L(1,23,0), vP_S(1,1,999), vP_S(1,2,999), vP_S(1,3,999), vP_S(1,4,999), vP_S(1,5,999), vP_S(1,6,999), vP_S(1,7,999), vP_S(1,8,999), vP_S(1,9,999), vP_S(1,10,999), vP_S(1,11,999), vP_S(1,12,999), vP_S(1,13,999), vP_S(1,14,999), vP_S(1,15,999), vP_S(1,16,999), vP_S(1,17,999), vP_S(1,18,999), vP_S(1,19,999), vP_S(1,20,999), vP_S(1,21,999), vP_S(1,22,999), vP_S(1,23,999), vP_PV(1,1,998), vP_PV(1,2,998), vP_PV(1,3,998), vP_PV(1,4,998), vP_PV(1,5,998), vP_PV(1,6,998), vP_PV(1,7,998), vP_PV(1,8,998), vP_PV(1,9,998), vP_PV(1,10,998), vP_PV(1,11,998), vP_PV(1,12,998), vP_PV(1,13,998), vP_PV(1,14,998), vP_PV(1,15,998), vP_PV(1,16,998), vP_PV(1,17,998), vP_PV(1,18,998), vP_PV(1,19,998), vP_PV(1,20,998), vP_PV(1,21,998), vP_PV(1,22,998), vP_PV(1,23,998)} COST 11442569@1"
@@ -359,3 +367,34 @@ def best_grid_transfer_results_parse(result, unit="W"):
     object_result = {"P_L": vP_L_results, "P_PV": vP_PV_results, "P_S": vP_S_results, "Charge": charge_results,
                      "Discharge": discharge_results, "Feed-in" : feed_in_results, "From grid": from_grid_results}
     return object_result
+
+def asp_to_json(solver_results, unit="KW"):
+    results = best_grid_transfer_results_parse(solver_results, unit)
+    toReturn = OrderedDict()
+    if unit == "KW":
+        toReturn["unit"] = "kWh"
+    else:
+        toReturn["unit"] = "W"
+    toReturn["discharge"] = []
+    toReturn["charge"] = []
+    toReturn["production"] = []
+    toReturn["consumption"] = []
+    toReturn["feed_in"] = []
+    toReturn["from_grid"] = []
+    for cont in range(len(results["P_L"])):
+        date = results["P_L"][cont]["day"].replace("\"", "")
+        time = results["P_L"][cont]["time"][:-3]
+        charge = float(results["Charge"][cont]["value"])
+        discharge = float(results["Discharge"][cont]["value"])
+        production = float(results["P_PV"][cont]["value"])
+        consumption = float(results["P_L"][cont]["value"])
+        feedin = float(results["Feed-in"][cont]["value"])
+        fromgrid = float(results["From grid"][cont]["value"])
+        toReturn["charge"].append({"date": date, "time": time, "value": charge})
+        toReturn["discharge"].append({"date": date, "time": time, "value": discharge})
+        toReturn["production"].append({"date": date, "time": time, "value": production})
+        toReturn["consumption"].append({"date": date, "time": time, "value": consumption})
+        toReturn["feed_in"].append({"date": date, "time": time, "value": feedin})
+        toReturn["from_grid"].append({"date": date, "time": time, "value": fromgrid})
+
+    return toReturn
