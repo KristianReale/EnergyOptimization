@@ -19,12 +19,16 @@ class TestExecution(unittest.TestCase):
         #results = calculate_best_grid_transfer(0, factsFiles, saveFilePath)
         asp_to_cvs(solverResultsFilePath, resultsFiles)'''
 
-    def test_build_results(self):
+
+    '''def test_build_results(self):
         solverResultsFilePath = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1_Wh_limit.txt"
         resultsFiles = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1_Wh_limit.csv"
         #solverResultsFilePath = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1_15min_Wh/H1_15min_Wh.txt"
         #resultsFiles = os.path.dirname(os.path.abspath(__file__)) + "/Results/H1_15min_Wh/H1_15min_Wh.csv"
-        asp_to_cvs(solverResultsFilePath, resultsFiles, unit="KW")
+        asp_to_cvs(solverResultsFilePath, resultsFiles, unit="KW")'''
+
+    def test_build_excel_results(self):
+        generate_final_excel()
 
 if __name__ == '__main__':
     unittest.main()
