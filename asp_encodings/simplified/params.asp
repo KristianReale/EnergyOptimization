@@ -1,4 +1,4 @@
-vE_SminPercentage(5).
+vE_SminPercentage(95).
 vE_SmaxPercentage(100).
 vDischargeMinPercentage(0).
 vDischargeMaxPercentage(100).
