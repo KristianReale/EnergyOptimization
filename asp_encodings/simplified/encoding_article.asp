@@ -60,6 +60,8 @@ vFrom_grid(D, I, M + C) :- vP_G(D, I, C), buyMore(D, I, M), C >= 0.
 %% P_Smin <= PS_t_d <= P_Smax
 :- P_Smin > P_S, vDischarge(D, I, P_S), vP_Smin(P_Smin).
 :- P_S > P_Smax, vDischarge(D, I, P_S), vP_Smax(P_Smax).
+:- vDischarge(D, I, P_S), vP_L(D, I, P_L), vP_PV(D, I, P_PV), P_L > P_PV, P_S > P_L - P_PV.
+:~ vCharge(D, I, P_SC), vP_L(D, I, P_L), vP_PV(D, I, P_PV), P_PV > P_L, P_SC < P_PV - P_L. [-P_SC@1]
 
 #show vP_L/3.
 #show vP_PV/3.
