@@ -79,6 +79,7 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
 
     counterTime = 1
     currentDate = None
+    initChargeStr = None
     for (date, time), values in hourly_data.items():
         if currentDate == None:
             currentDate = date
@@ -130,9 +131,11 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
             minutes_seconds = "00"
         if format == FORMAT.ASP:
             if counterTime == 1:
-                stringToWrite += (
-                    f"vE_SinitPercentage({round(state_of_charge)}).\n"
-                )
+                if initChargeStr is None:
+                    #stringToWrite += (
+                    #    f"vE_SinitPercentage({round(state_of_charge)}).\n"
+                    #)
+                    initChargeStr = f"vE_SinitPercentage({round(state_of_charge)}).\n"
             if unit == "KW":
                 stringToWrite += (
                     f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"                    
@@ -159,6 +162,8 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
     header = None
     if format == FORMAT.ASP:
         extension = ".asp"
+        with open(output_dir + "/initCharge.asp", 'w') as initChargeFile:
+            initChargeFile.write(initChargeStr)
     elif format == FORMAT.CSV:
         extension = ".csv"
         if unit == "KW":
@@ -171,6 +176,7 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
             if header is not None:
                 outfile.write(header)
             outfile.write(outputParts[key])
+
 
 def asp_to_cvs(input_file, output_file, unit ="W"):
     with open(input_file, 'r') as in_f, open(output_file, 'w') as out_f:
