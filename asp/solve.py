@@ -10,6 +10,7 @@ DLV_PATH = ROOT_PATH + "/../solver/DLV/macosx/dlv-2.1.2-arm64"
 ASP_PROGRAM_PATH = ROOT_PATH + "/../asp_encodings/simplified/encoding_article.asp"
 #ASP_PROGRAM_PATH = "asp_encodings/simplified/encoding.asp"
 ASP_PARAMS_PATH = ROOT_PATH + "/../asp_encodings/simplified/params.asp"
+ASP_MAXCHARGE_PATH = ROOT_PATH + "/../asp_encodings/simplified/maxChargeKwh.asp"
 
 def calculate_best_storage(building, esinit, date, saveResultsFile = None):
     command = [DLV_PATH, ASP_PROGRAM_PATH, ASP_PARAMS_PATH, "--silent"]
@@ -213,26 +214,26 @@ def best_storage_results_parse(result):
     return object_result
 
 # SIMPLIFIED PHASE
-def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption):
+def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption, time_limit):
 
     with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as tmp:
         print(tmp.name)
         factsFile = tmp.name
-        tmp.write(f"vE_SinitPercentage({init_charge_percentage}).\n")
+        tmp.write(f"vE_SinitPercentage({init_charge_percentage * 100:.00f}).\n")
 
         if unit == "kWh":
             counterTime = 1
             for prod in production:
-                time_value = prod["time"]
-                prod_value = prod['value']
-                cons_value = next((item["value"] for item in consumption if item["time"] == time_value), None)
+                time_value = prod.time
+                prod_value = prod.value
+                cons_value = next((item.value for item in consumption if item.time == time_value), None)
                 tmp.write(f"time({counterTime}, \"{time_value}:00\").\n")
                 tmp.write(f"vP_PV(\"{date}\",\"{time_value}:00\",{prod_value * 100:.00f}).\n")
                 tmp.write(f"vP_L(\"{date}\",\"{time_value}:00\",{cons_value * 100:.00f}).\n")
                 counterTime += 1
 
 
-    command = ["clingo", ASP_PROGRAM_PATH, factsFile, factsFile, ASP_PARAMS_PATH, "--models=1"]
+    command = ["clingo", ASP_PROGRAM_PATH, factsFile, ASP_PARAMS_PATH, ASP_MAXCHARGE_PATH, "--quiet=1", "--outf=1", f"--time-limit={time_limit}"]
     print(*command)
     response = subprocess.run(command, capture_output=True, text=True)
     '''if saveResultsFile is not None:
@@ -371,6 +372,7 @@ def best_grid_transfer_results_parse(result, unit="W"):
 def asp_to_json(solver_results, unit="KW"):
     results = best_grid_transfer_results_parse(solver_results, unit)
     toReturn = OrderedDict()
+    toReturn["date"] = ""
     if unit == "KW":
         toReturn["unit"] = "kWh"
     else:
@@ -383,6 +385,7 @@ def asp_to_json(solver_results, unit="KW"):
     toReturn["from_grid"] = []
     for cont in range(len(results["P_L"])):
         date = results["P_L"][cont]["day"].replace("\"", "")
+        toReturn["date"] = date
         time = results["P_L"][cont]["time"][:-3]
         charge = float(results["Charge"][cont]["value"])
         discharge = float(results["Discharge"][cont]["value"])
@@ -390,11 +393,12 @@ def asp_to_json(solver_results, unit="KW"):
         consumption = float(results["P_L"][cont]["value"])
         feedin = float(results["Feed-in"][cont]["value"])
         fromgrid = float(results["From grid"][cont]["value"])
-        toReturn["charge"].append({"date": date, "time": time, "value": charge})
-        toReturn["discharge"].append({"date": date, "time": time, "value": discharge})
-        toReturn["production"].append({"date": date, "time": time, "value": production})
-        toReturn["consumption"].append({"date": date, "time": time, "value": consumption})
-        toReturn["feed_in"].append({"date": date, "time": time, "value": feedin})
-        toReturn["from_grid"].append({"date": date, "time": time, "value": fromgrid})
+        toReturn["charge"].append({"time": time, "value": charge})
+        toReturn["discharge"].append({"time": time, "value": discharge})
+        toReturn["production"].append({"time": time, "value": production})
+        toReturn["consumption"].append({"time": time, "value": consumption})
+        toReturn["feed_in"].append({"time": time, "value": feedin})
+        toReturn["from_grid"].append({"time": time, "value": fromgrid})
+
 
     return toReturn

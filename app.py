@@ -5,6 +5,25 @@ from asp.solve import *
 
 app = Flask(__name__)
 
+from dataclasses import dataclass, field
+
+
+@dataclass
+class TimeValue:
+    time: str = "00:00"
+    value: float = 0.0
+
+@dataclass
+class Results:
+    date: str = "2020-01-01"
+    unit: str = "kWh"
+    discharge: list[TimeValue] = field(default_factory=list)
+    charge: list[TimeValue] = field(default_factory=list)
+    production: list[TimeValue] = field(default_factory=list)
+    consumption: list[TimeValue] = field(default_factory=list)
+    feed_in: list[TimeValue] = field(default_factory=list)
+    from_grid: list[TimeValue] = field(default_factory=list)
+
 
 '''@app.route('/best_energy_storage_python', methods=['POST'])
 def best_energy_storage_python():

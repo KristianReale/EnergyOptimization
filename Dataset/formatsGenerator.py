@@ -204,11 +204,12 @@ def asp_to_cvs(input_file, output_file, unit ="W"):
 def generate_final_excel():
     resultsFolder = os.path.dirname(os.path.abspath(__file__)) + f"/Results"
     house_list = [f for f in os.listdir(resultsFolder) if os.path.isdir(os.path.join(resultsFolder, f))]
+    nextInitCharge = 0
     for house in house_list:
         excel_file = resultsFolder + f"/{house}/analysis_{house}.xlsx"
         wb = Workbook()
         wb.remove(wb.active)
-        file_list = sorted([f for f in os.listdir(os.path.dirname(os.path.abspath(__file__)) + f"/Results/{house}") if f.startswith("output")])
+        file_list = sorted([f for f in os.listdir(os.path.dirname(os.path.abspath(__file__)) + f"/Results/{house}") if f.startswith("output") and not f.endswith("finalCharge.asp")])
         for file in file_list:
             date_file = re.search(r'(\d{4}-\d{2}-\d{2})', file).group(1)
             input_file_asp = os.path.dirname(
@@ -253,11 +254,14 @@ def generate_final_excel():
 
             with open(input_file_asp, 'r') as in_f:
                 lastString = in_f.read().split("Answer:")[-1]
-                isOptimum = "OPTIMUM FOUND" in lastString
+                isOptimum = "OPTIMUM" in lastString
                 results = best_grid_transfer_results_parse(lastString, "KW")
 
                 #ws1.title = date_file
-                ws1['L1'] = "ASP Solution. Is Optimal: " + str(isOptimum)
+                optStr = "NOT KNOWN"
+                if isOptimum:
+                    optStr = "YES"
+                ws1['L1'] = "ASP Solution. Is Optimal: " + optStr
                 ws1['L2'] = "date"
                 ws1['M2'] = "Discharge(KW)"
                 ws1['N2'] = "Charge(KW)"
@@ -278,11 +282,11 @@ def generate_final_excel():
                     feedin = float(results["Feed-in"][cont]["value"])
                     fromgrid = float(results["From grid"][cont]["value"])
 
-                    if i == 3:
+                    '''if i == 3:
                         ws1['R1'] = "Init Charge (%):"
                         ws1['S1'] = float(init_state_of_charge) / 100
                         ws1['S1'].number_format = '0.00%'
-                        ws1['T1'] = ws1['S1'].value * 10
+                        ws1['T1'] = ws1['S1'].value * 10'''
 
                     ws1[f"L{i}"] = date
                     ws1[f"M{i}"] = discharge
@@ -302,6 +306,21 @@ def generate_final_excel():
                     '''ws1[f"R{i}"] = float(state_of_charge) / 100
                     ws1[f"R{i}"].number_format = '0.00%'
                     ws1[f"S{i}"] = ws1['H1'].value * 10'''
+
+            ws1['R1'] = "Init Charge (%):"
+            ws1['S1'] = float(nextInitCharge) / 100
+            ws1['S1'].number_format = '0.00%'
+            ws1['T1'] = ws1['S1'].value * 10
+
+            finalChargeFileName = input_file_asp.rsplit(".", 1)[0] + "_finalCharge.asp"
+            print("AAA " + finalChargeFileName)
+            with open(finalChargeFileName, 'r') as in_fCharge:
+                result = in_fCharge.read().split("ANSWER")[-1]
+                pattern_initCharge = r'vE_SinitPercentage\((.*?)\)'  # Adatta se il formato cambia
+                matches_initCharge = re.findall(pattern_initCharge, result)
+                for match in matches_initCharge:
+                    nextInitCharge = float(match) / 100
+
 
         wb.save(excel_file)
 

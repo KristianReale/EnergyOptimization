@@ -61,7 +61,7 @@ vFrom_grid(D, I, M + C) :- vP_G(D, I, C), buyMore(D, I, M), C >= 0.
 :- P_Smin > P_S, vDischarge(D, I, P_S), vP_Smin(P_Smin).
 :- P_S > P_Smax, vDischarge(D, I, P_S), vP_Smax(P_Smax).
 :- vDischarge(D, I, P_S), vP_L(D, I, P_L), vP_PV(D, I, P_PV), P_L > P_PV, P_S > P_L - P_PV.
-:~ vCharge(D, I, P_SC), vP_L(D, I, P_L), vP_PV(D, I, P_PV), P_PV > P_L, P_SC < P_PV - P_L. [-P_SC@1]
+:~ vCharge(D, I, P_SC), vP_L(D, I, P_L), vP_PV(D, I, P_PV), P_PV > P_L, P_SC < P_PV - P_L. [1@1, D, I]
 
 #show vP_L/3.
 #show vP_PV/3.
@@ -71,6 +71,7 @@ vFrom_grid(D, I, M + C) :- vP_G(D, I, C), buyMore(D, I, M), C >= 0.
 #show vFeed_in/3.
 #show vFrom_grid/3.
 #show vE_Sinit/1.
+#show time/2.
 
 %UNICAL
 %minimo 5%
