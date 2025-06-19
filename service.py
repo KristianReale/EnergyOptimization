@@ -1,19 +1,13 @@
 import bentoml
+
+
 from app import TimeValue, Results
-import json
 from asp.solve import *
 
 @bentoml.service(
-    image=bentoml.images.Image(python_version="3.10").python_packages(""),
+
 )
-
-
-
 class Optimization:
-    def __init__(self) -> None:
-        print("Started")
-
-
     @bentoml.api()
     def best_grid_transfer_from_prediction(self, building: str, date: str, init_charge_percentage: float, unit: str, production: list[TimeValue], consumption: list[TimeValue], time_execution_limit_secs: int = 1200) -> Results:
         res = Results()
@@ -29,8 +23,7 @@ class Optimization:
 
         return res
 
-        #return json.dumps(
-        #    )
+
 
 
 
