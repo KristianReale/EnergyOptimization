@@ -3,16 +3,17 @@ import unittest
 import os
 import sys
 
-sys.path += [os.path.abspath(__file__ + "/..")]
+#sys.path += [os.path.abspath(__file__ + "/..")]
+sys.path += [os.path.abspath(__file__ + "/../..")]
 
 from formatsGenerator import *
-#from asp.solve import *
+from asp.solve import *
 
 
 class TestExecution(unittest.TestCase):
     def test_execution(self):
         for filename in os.listdir('Input/cubo'):
-            if filename.endswith('all.csv'):
+            if filename.endswith('merged_output.csv'):
                 #houseFolder = filename[:filename.index('_Wh.csv')]
                 houseFolder = "cubo"
                 if not os.path.exists(f"Input/{houseFolder}"):

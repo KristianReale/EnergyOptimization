@@ -7,7 +7,7 @@ import os
 
 from openpyxl.workbook import Workbook
 
-#from asp.solve import best_grid_transfer_results_parse
+from asp.solve import best_grid_transfer_results_parse
 
 
 class SPLIT_DATA(Enum):
@@ -204,21 +204,22 @@ def asp_to_cvs(input_file, output_file, unit ="W"):
 def generate_final_excel():
     resultsFolder = os.path.dirname(os.path.abspath(__file__)) + f"/Results"
     house_list = [f for f in os.listdir(resultsFolder) if os.path.isdir(os.path.join(resultsFolder, f))]
-    nextInitCharge = 0
+    nextInitCharge = 36
     for house in house_list:
         excel_file = resultsFolder + f"/{house}/analysis_{house}.xlsx"
         wb = Workbook()
         wb.remove(wb.active)
         file_list = sorted([f for f in os.listdir(os.path.dirname(os.path.abspath(__file__)) + f"/Results/{house}") if f.startswith("output") and not f.endswith("finalCharge.asp")])
+        maxCharge = 36
         for file in file_list:
             date_file = re.search(r'(\d{4}-\d{2}-\d{2})', file).group(1)
             input_file_asp = os.path.dirname(
                 os.path.abspath(__file__)) + "/Results" + f"/{house}/{file}"
             input_file_csv = os.path.dirname(
-                os.path.abspath(__file__)) + "/InputDataset" + f"/{house}_Wh/csv/{date_file}.csv"
+                os.path.abspath(__file__)) + "/Input" + f"/{house}/csv/{date_file}_KWh.csv"
 
             ws1 = wb.create_sheet(title=date_file)
-            init_state_of_charge = -1
+            init_state_of_charge = 36
             with open(input_file_csv, 'r') as csvfile:
                 reader = csv.reader(csvfile)
                 header = next(reader)  # Legge l'intestazione
@@ -236,20 +237,20 @@ def generate_final_excel():
                 i = 3
                 for row in reader:
                     #print(row)
-                    #date, discharge, charge, production, consumption, state_of_charge, h1_w = row
-                    date, discharge, charge, production, consumption, feed_in, from_grid, state_of_charge = row
-                    if i == 3:
-                        init_state_of_charge = state_of_charge
+                    #date, discharge, charge, production, consumption, feed_in, from_grid, state_of_charge = row
+                    date, production, consumption = row
+                    #if i == 3:
+                    #    init_state_of_charge = state_of_charge
                     ws1[f"A{i}"] = date
-                    ws1[f"B{i}"] = float(discharge)
-                    ws1[f"C{i}"] = float(charge)
+                    #ws1[f"B{i}"] = float(discharge)
+                    #ws1[f"C{i}"] = float(charge)
                     ws1[f"D{i}"] = float(production)
                     ws1[f"E{i}"] = float(consumption)
-                    ws1[f"F{i}"] = float(feed_in)
-                    ws1[f"G{i}"] = float(from_grid)
-                    ws1[f"H{i}"] = float(state_of_charge) / 100
-                    ws1[f"H{i}"].number_format = '0.00%'
-                    ws1[f"I{i}"] = ws1[f"H{i}"].value * 10
+                    #ws1[f"F{i}"] = float(feed_in)
+                    #ws1[f"G{i}"] = float(from_grid)
+                    #ws1[f"H{i}"] = float(state_of_charge) / 100
+                    #ws1[f"H{i}"].number_format = '0.00%'
+                    #ws1[f"I{i}"] = ws1[f"H{i}"].value * 10
                     i+=1
 
             with open(input_file_asp, 'r') as in_f:
@@ -282,11 +283,24 @@ def generate_final_excel():
                     feedin = float(results["Feed-in"][cont]["value"])
                     fromgrid = float(results["From grid"][cont]["value"])
 
-                    '''if i == 3:
+                    if i == 3:
                         ws1['R1'] = "Init Charge (%):"
-                        ws1['S1'] = float(init_state_of_charge) / 100
+                        ws1['S1'] = float(init_state_of_charge) / maxCharge
+                        #ws1['S1'] = 100
                         ws1['S1'].number_format = '0.00%'
-                        ws1['T1'] = ws1['S1'].value * 10'''
+                        #ws1['T1'] = ws1['S1'].value * 36
+                        ws1['T1'] = init_state_of_charge
+                        ws1['U1'] = "Max Charge:"
+                        ws1['V1'] = maxCharge
+                        ws1['W1'] = "Minimum storage Level"
+                        ws1['X1'] = 0.1
+                        ws1['X1'].number_format = '0.00%'
+                        ws1['W2'] = "Maximum storage Level"
+                        ws1['X2'] = 1
+                        ws1['X2'].number_format = '0.00%'
+                        ws1['W3'] = "Maximum Power (both Charge and Discharge)"
+                        ws1['X3'] = "18kWh"
+
 
                     ws1[f"L{i}"] = date
                     ws1[f"M{i}"] = discharge
@@ -295,7 +309,7 @@ def generate_final_excel():
                     ws1[f"P{i}"] = consumption
                     ws1[f"Q{i}"] = feedin
                     ws1[f"R{i}"] = fromgrid
-                    ws1[f"S{i}"] = f"=T{i}/10"
+                    ws1[f"S{i}"] = f"=T{i}/V$1"
                     ws1[f"S{i}"].number_format = '0.00%'
                     if (i == 3):
                         ws1["T3"] = "=T1-M3+N3"
@@ -308,18 +322,21 @@ def generate_final_excel():
                     ws1[f"S{i}"] = ws1['H1'].value * 10'''
 
             ws1['R1'] = "Init Charge (%):"
-            ws1['S1'] = float(nextInitCharge) / 100
+            ws1['S1'] = float(nextInitCharge) / maxCharge
             ws1['S1'].number_format = '0.00%'
-            ws1['T1'] = ws1['S1'].value * 10
+            # ws1['T1'] = ws1['S1'].value * 36
+            ws1['T1'] = float(nextInitCharge)
 
             finalChargeFileName = input_file_asp.rsplit(".", 1)[0] + "_finalCharge.asp"
             print("AAA " + finalChargeFileName)
             with open(finalChargeFileName, 'r') as in_fCharge:
                 result = in_fCharge.read().split("ANSWER")[-1]
-                pattern_initCharge = r'vE_SinitPercentage\((.*?)\)'  # Adatta se il formato cambia
+                pattern_initCharge = r'vFinalCharge\((.*?)\)'  # Adatta se il formato cambia
                 matches_initCharge = re.findall(pattern_initCharge, result)
                 for match in matches_initCharge:
                     nextInitCharge = float(match) / 100
+
+
 
 
         wb.save(excel_file)
