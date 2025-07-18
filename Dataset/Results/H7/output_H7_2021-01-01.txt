@@ -1,0 +1,16 @@
+% clingo version 4.5.4
+% Reading from encoding_article.asp ...
+% Solving...
+% Answer: 1
+%ANSWER
+time(1,"0:00:00"). vP_PV("2021-01-01","0:00:00",0). vP_L("2021-01-01","0:00:00",184). vE_Sinit(0). vP_G("2021-01-01","0:00:00",184). vDischarge("2021-01-01","0:00:00",0). vFeed_in("2021-01-01","0:00:00",0). vCharge("2021-01-01","0:00:00",0). vFrom_grid("2021-01-01","0:00:00",184).
+%COST 499500
+%OPTIMUM
+% 
+% Models         : 1     
+%   Optimum      : yes
+% Optimization   : 499500
+% Calls          : 1
+% Time           : 3.656s (Solving: 0.01s 1st Model: 0.01s Unsat: 0.00s)
+% CPU Time       : 3.640s
+% Threads        : 8        (Winner: 3)

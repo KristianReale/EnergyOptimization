@@ -112,7 +112,7 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
             true_prod = round(true_prod, 2)
         else:
             true_prod = round(true_prod, 1)
-        prod = values['true_prod'][0]
+        prod = values['prod'][0]
         if unit == "KWh":
             prod = prod #/ 1000
             prod = round(prod, 2)
@@ -122,7 +122,7 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
         consumption = 0
         if what == "real":
             production = true_prod
-            consumption = true_cons
+            consumption = dLinear
 
         state_of_charge = 100
         stringToWrite = ""

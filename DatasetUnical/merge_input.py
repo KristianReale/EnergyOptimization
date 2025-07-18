@@ -26,8 +26,12 @@ class TestExecution(unittest.TestCase):
         df1 = df1[~((df1['Date'].dt.month == 12) & (df1['Date'].dt.day == 31))]
         df2 = df2[~((df2['Date'].dt.month == 12) & (df2['Date'].dt.day == 31))]
 
-        # Rinomina la colonna 'True' in entrambi per distinguerli
+        # Rinomina le per distinguere
+        df1 = df1.rename(columns={'True': 'True Cons'})
+        df1 = df1.rename(columns={'dLinear': 'dLinear Cons'})
+        df1 = df1.rename(columns={'TimesNet': 'TimesNet Cons'})
         df2 = df2.rename(columns={'True': 'True Prod'})
+        df2 = df2.rename(columns={'Pred': 'Pred Prod'})
 
         # Merge (join) sui valori della colonna 'Date'
         merged_df = pd.merge(df1, df2, on='Date', how='outer')
@@ -55,6 +59,6 @@ class TestExecution(unittest.TestCase):
 
 
     def has_any_prediction(self, group):
-        return not group[['Pred']].isnull().all().all()
+        return not group[['Pred Prod']].isnull().all().all()
 if __name__ == '__main__':
     unittest.main()

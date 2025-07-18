@@ -1,0 +1,2 @@
+date,Discharge(KW),Charge(KW),Production(KW),Consumption(KW),Feed-in(KW),From grid(KW),State of Charge(%)
+2021-01-01 0:00:00,0.0,0.01,0.0,0.91,0.0,0.92,9.0
