@@ -120,9 +120,24 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
             prod = round(prod, 1)
         production = 0
         consumption = 0
-        if what == "real":
+        if what == "dlinear-predprod":
+            production = prod
+            consumption = dLinear
+        elif what == "dlinear-trueprod":
             production = true_prod
             consumption = dLinear
+        elif what == "timesnet-predprod":
+            production = prod
+            consumption = TimesNet
+        elif what == "timesnet-trueprod":
+            production = true_prod
+            consumption = TimesNet
+        elif what == "truecons-trueprod":
+            production = true_prod
+            consumption = true_cons
+        elif what == "truecons-predprod":
+            production = prod
+            consumption = true_cons
 
         state_of_charge = 100
         stringToWrite = ""
@@ -204,8 +219,9 @@ def asp_to_cvs(input_file, output_file, unit ="W"):
 def generate_final_excel():
     resultsFolder = os.path.dirname(os.path.abspath(__file__)) + f"/Results"
     house_list = [f for f in os.listdir(resultsFolder) if os.path.isdir(os.path.join(resultsFolder, f))]
-    nextInitCharge = 36
+
     for house in house_list:
+        nextInitCharge = 36
         excel_file = resultsFolder + f"/{house}/analysis_{house}.xlsx"
         wb = Workbook()
         wb.remove(wb.active)
@@ -224,6 +240,7 @@ def generate_final_excel():
                 reader = csv.reader(csvfile)
                 header = next(reader)  # Legge l'intestazione
                 ws1['A1'] = "Original Dataset"
+                ws1['D1'] = "Analysis: " + house
                 ws1['A2'] = "date"
                 ws1['B2'] = "Discharge(KW)"
                 ws1['C2'] = "Charge(KW)"
@@ -256,13 +273,30 @@ def generate_final_excel():
             with open(input_file_asp, 'r') as in_f:
                 lastString = in_f.read().split("Answer:")[-1]
                 isOptimum = "OPTIMUM" in lastString
+                numAns = lastString.split("%")[0]
                 results = best_grid_transfer_results_parse(lastString, "KW")
+
+                solving_time = "NA"
+                model_time = "NA"
+                pattern = r"Solving:\s*([\d.]+)s.*?1st Model:\s*([\d.]+)s"
+                match = re.search(pattern, lastString)
+                if match:
+                    solving_time = float(match.group(1))
+                    model_time = float(match.group(2))
 
                 #ws1.title = date_file
                 optStr = "NOT KNOWN"
                 if isOptimum:
                     optStr = "YES"
-                ws1['L1'] = "ASP Solution. Is Optimal: " + optStr
+                ws1['V6'] = "Is Optimal: "
+                ws1['W6'] = optStr
+                ws1['V7'] = "Last Answer Set Number: "
+                ws1['W7'] = numAns
+                ws1['V8'] = "Time First Model: "
+                ws1['W8'] = model_time
+                ws1['V9'] = "Time Last Model: "
+                ws1['W9'] = solving_time
+                ws1['L1'] = "ASP Solution"
                 ws1['L2'] = "date"
                 ws1['M2'] = "Discharge(KW)"
                 ws1['N2'] = "Charge(KW)"
@@ -328,7 +362,7 @@ def generate_final_excel():
             ws1['T1'] = float(nextInitCharge)
 
             finalChargeFileName = input_file_asp.rsplit(".", 1)[0] + "_finalCharge.asp"
-            print("AAA " + finalChargeFileName)
+            #print("AAA " + finalChargeFileName)
             with open(finalChargeFileName, 'r') as in_fCharge:
                 result = in_fCharge.read().split("ANSWER")[-1]
                 pattern_initCharge = r'vFinalCharge\((.*?)\)'  # Adatta se il formato cambia
