@@ -1,10 +1,12 @@
 import csv
+import json
 import re
 from datetime import datetime
 from collections import defaultdict
 from enum import Enum
 import os
 
+import pandas as pd
 from openpyxl.workbook import Workbook
 
 from asp.solve import best_grid_transfer_results_parse
@@ -20,6 +22,7 @@ class SPLIT_DATA(Enum):
 class FORMAT(Enum):
     ASP = 1
     CSV = 2
+    JSON = 3
 
 def group_data(input_file, minute_granularity=60): #per media
     hourly_data = defaultdict(
@@ -167,10 +170,25 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
             stringToWrite += f"{date} {time}:{minutes_seconds},{production},{consumption}\n"
 
         if split_data == SPLIT_DATA.DAY:
-            if date not in outputParts:
-                outputParts[date] = stringToWrite
+            if format == FORMAT.JSON:
+                if date not in outputParts:
+                    outputParts[date] = {
+                        "production": [],
+                        "consumption": []
+                    }
+                outputParts[date]["production"].append({
+                    "time": f"{time}:{minutes_seconds}",
+                    "value": production
+                })
+                outputParts[date]["consumption"].append({
+                    "time": f"{time}:{minutes_seconds}",
+                    "value": consumption
+                })
             else:
-                outputParts[date] += stringToWrite
+                if date not in outputParts:
+                    outputParts[date] = stringToWrite
+                else:
+                    outputParts[date] += stringToWrite
         counterTime += 1
 
     extension = ".asp"
@@ -185,12 +203,14 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
             header = "date,Production(KWh),Consumption(KWh)\n"
         else:
             header = "date,Production(W),Consumption(W)\n"
+    elif format == FORMAT.JSON:
+        extension = ".json"
 
     for key in outputParts:
         with open(output_dir + "/" + str(key) + "_" + unit + extension, 'w') as outfile:
             if header is not None:
                 outfile.write(header)
-            outfile.write(outputParts[key])
+            outfile.write(json.dumps(outputParts[key]))
 
 
 def asp_to_cvs(input_file, output_file, unit ="W"):
@@ -214,6 +234,10 @@ def asp_to_cvs(input_file, output_file, unit ="W"):
             fromgrid = float(results["From grid"][cont]["value"])# / 10
             out_f.write(f"{date},{discharge},{charge},{production},{consumption},{feedin},{fromgrid}\n")
 
+
+def csv_to_json(file):
+    data = pd.read_excel(file, 0)
+    data = data["columns"]
 
 
 def generate_final_excel():
@@ -292,10 +316,8 @@ def generate_final_excel():
                 ws1['W6'] = optStr
                 ws1['V7'] = "Last Answer Set Number: "
                 ws1['W7'] = numAns
-                ws1['V8'] = "Time First Model: "
-                ws1['W8'] = model_time
-                ws1['V9'] = "Time Last Model: "
-                ws1['W9'] = solving_time
+                ws1['V8'] = "Time Last Model: "
+                ws1['W8'] = solving_time
                 ws1['L1'] = "ASP Solution"
                 ws1['L2'] = "date"
                 ws1['M2'] = "Discharge(KW)"

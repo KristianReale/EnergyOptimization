@@ -23,8 +23,12 @@ class TestExecution(unittest.TestCase):
                         os.makedirs(f"Input/{folder}/csv")
                     if not os.path.exists(f"Input/{folder}/asp"):
                         os.makedirs(f"Input/{folder}/asp")
-                    build_from_csv(f"Input/{filename}", f"Input/{folder}/asp",split_data=SPLIT_DATA.DAY, format=FORMAT.ASP, unit="KWh", what=folder)
-                    build_from_csv(f"Input/{filename}", f"Input/{folder}/csv",split_data=SPLIT_DATA.DAY, format=FORMAT.CSV, unit="KWh", what=folder)
+                    if not os.path.exists(f"Input/{folder}/json"):
+                        os.makedirs(f"Input/{folder}/json")
+                    #build_from_csv(f"Input/{filename}", f"Input/{folder}/asp",split_data=SPLIT_DATA.DAY, format=FORMAT.ASP, unit="KWh", what=folder)
+                    #build_from_csv(f"Input/{filename}", f"Input/{folder}/csv",split_data=SPLIT_DATA.DAY, format=FORMAT.CSV, unit="KWh", what=folder)
+                    build_from_csv(f"Input/{filename}", f"Input/{folder}/json", split_data=SPLIT_DATA.DAY, format=FORMAT.JSON, unit="KWh", what=folder)
+
 
 if __name__ == '__main__':
     unittest.main()

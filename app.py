@@ -1,9 +1,15 @@
 import json
 
 from flask import Flask, jsonify, request
+from flask_restx import Api, Resource
+from pydantic import BaseModel
+
 from asp.solve import *
 
 app = Flask(__name__)
+api = Api(app, version='1.0', title='My API', description='A simple demo API')
+ns = api.namespace("", "api")
+
 
 from dataclasses import dataclass, field
 
@@ -14,7 +20,7 @@ class TimeValue:
     value: float = 0.0
 
 @dataclass
-class Results:
+class Results(BaseModel):
     date: str = "2020-01-01"
     unit: str = "kWh"
     discharge: list[TimeValue] = field(default_factory=list)
@@ -62,19 +68,24 @@ def best_energy_storage_asp():
     return ""
 '''
 
-@app.route('/best_grid_transfer_from_prediction', methods=['POST'])
-def best_grid_transfer():
-    data = request.get_json()
-    building = data["building"]
-    date = data["date"]
-    init_charge_percentage = data["init_charge_percentage"]
-    unit = data["unit"]
-    production = data["production"]
-    consumption = data["consumption"]
+@ns.route('/best_grid_transfer')
+class BestGridTransferFromPrediction(Resource):
+    def post(self):
+        data = request.get_json()
+        building = data["building"]
+        date = data["date"]
+        init_charge_percentage = data["init_charge_percentage"]
+        production = data["production"]
+        consumption = data["consumption"]
+        time_execution_limit_secs = data["time_execution_limit_secs"]
+        isSchedule = False
+        if "schedule" in data:
+            isSchedule = bool(data["schedule"])
 
-    return json.dumps(calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption))
-
-
+        #return json.dumps(calculate_best_grid_transfer(building, date, init_charge_percentage,
+        #                                               "kWh", production, consumption, time_execution_limit_secs))
+        return calculate_best_grid_transfer(building, date, init_charge_percentage,
+                                                       "kWh", production, consumption, time_execution_limit_secs, isSchedule)
 
 
 if __name__ == '__main__':

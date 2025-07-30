@@ -2,6 +2,9 @@ import subprocess
 import re
 import os
 import tempfile
+import json
+import threading
+import uuid
 from collections import OrderedDict
 from datetime import datetime
 
@@ -214,7 +217,12 @@ def best_storage_results_parse(result):
     return object_result
 
 # SIMPLIFIED PHASE
-def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption, time_limit):
+def generate_execution_id():
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    short_uuid = uuid.uuid4().hex[:8]
+    return f"{timestamp}_{short_uuid}"
+
+def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption, time_limit, isSchedule = False):
 
     with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as tmp:
         print(tmp.name)
@@ -224,26 +232,41 @@ def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, p
         if unit == "kWh":
             counterTime = 1
             for prod in production:
-                time_value = prod.time
-                prod_value = prod.value
-                cons_value = next((item.value for item in consumption if item.time == time_value), None)
+                print(prod)
+                time_value = prod['time']
+                prod_value = prod['value']
+                cons_value = next((item['value'] for item in consumption if item['time'] == time_value), None)
                 tmp.write(f"time({counterTime}, \"{time_value}:00\").\n")
                 tmp.write(f"vP_PV(\"{date}\",\"{time_value}:00\",{prod_value * 100:.00f}).\n")
                 tmp.write(f"vP_L(\"{date}\",\"{time_value}:00\",{cons_value * 100:.00f}).\n")
                 counterTime += 1
 
-
-    command = ["clingo", ASP_PROGRAM_PATH, factsFile, ASP_PARAMS_PATH, ASP_MAXCHARGE_PATH, "--quiet=1", "--outf=1", f"--time-limit={time_limit}"]
+    command = ["clingo", ASP_PROGRAM_PATH, factsFile, ASP_PARAMS_PATH, ASP_MAXCHARGE_PATH, "--quiet=1", "--outf=1",
+               f"--time-limit={time_limit}"]
     print(*command)
-    response = subprocess.run(command, capture_output=True, text=True)
-    '''if saveResultsFile is not None:
-        with open(saveResultsFile, "w+") as f:
-            f.write(response.stdout)
+    if not isSchedule:
+        response = subprocess.run(command, capture_output=True, text=True)
+        return asp_to_json(response.stdout)
     else:
-        print(response.stdout)'''
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        execution_id = generate_execution_id()
+        results_filename = f"serviceOutput/solver_output_{execution_id}.txt"
+        def monitor():
+            stdout, stderr = process.communicate()
+            with open(results_filename, "w+") as f:
+                f.write(stdout)
+            #notify("Clingo terminato", "L'esecuzione è completata.")
+            print("Risultato:", stdout)
+            if stderr:
+                print("Errori:", stderr)
 
-    return asp_to_json(response.stdout)
-    #return response.stdout
+        # Avvia monitoraggio in background
+        threading.Thread(target=monitor, daemon=True).start()
+        return {"execution_id": execution_id}
+
+
+
+
 
 def best_grid_transfer_results_parse(result, unit="W"):
     #result = "{vP_L(1,1,0), vP_L(1,2,0), vP_L(1,3,0), vP_L(1,4,0), vP_L(1,5,0), vP_L(1,6,0), vP_L(1,7,0), vP_L(1,8,0), vP_L(1,9,0), vP_L(1,10,0), vP_L(1,11,0), vP_L(1,12,0), vP_L(1,13,0), vP_L(1,14,0), vP_L(1,15,0), vP_L(1,16,0), vP_L(1,17,0), vP_L(1,18,0), vP_L(1,19,0), vP_L(1,20,0), vP_L(1,21,0), vP_L(1,22,0), vP_L(1,23,0), vP_S(1,1,999), vP_S(1,2,999), vP_S(1,3,999), vP_S(1,4,999), vP_S(1,5,999), vP_S(1,6,999), vP_S(1,7,999), vP_S(1,8,999), vP_S(1,9,999), vP_S(1,10,999), vP_S(1,11,999), vP_S(1,12,999), vP_S(1,13,999), vP_S(1,14,999), vP_S(1,15,999), vP_S(1,16,999), vP_S(1,17,999), vP_S(1,18,999), vP_S(1,19,999), vP_S(1,20,999), vP_S(1,21,999), vP_S(1,22,999), vP_S(1,23,999), vP_PV(1,1,998), vP_PV(1,2,998), vP_PV(1,3,998), vP_PV(1,4,998), vP_PV(1,5,998), vP_PV(1,6,998), vP_PV(1,7,998), vP_PV(1,8,998), vP_PV(1,9,998), vP_PV(1,10,998), vP_PV(1,11,998), vP_PV(1,12,998), vP_PV(1,13,998), vP_PV(1,14,998), vP_PV(1,15,998), vP_PV(1,16,998), vP_PV(1,17,998), vP_PV(1,18,998), vP_PV(1,19,998), vP_PV(1,20,998), vP_PV(1,21,998), vP_PV(1,22,998), vP_PV(1,23,998)} COST 11442569@1"
@@ -369,14 +392,11 @@ def best_grid_transfer_results_parse(result, unit="W"):
                      "Discharge": discharge_results, "Feed-in" : feed_in_results, "From grid": from_grid_results}
     return object_result
 
-def asp_to_json(solver_results, unit="KW"):
+def asp_to_json(solver_results, unit="kWh"):
     results = best_grid_transfer_results_parse(solver_results, unit)
     toReturn = OrderedDict()
     toReturn["date"] = ""
-    if unit == "KW":
-        toReturn["unit"] = "kWh"
-    else:
-        toReturn["unit"] = "W"
+    #toReturn["unit"] = "kWh"
     toReturn["discharge"] = []
     toReturn["charge"] = []
     toReturn["production"] = []

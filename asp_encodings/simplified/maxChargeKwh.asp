@@ -1,1 +1,1 @@
-maxChargeKWh(1000).
+maxChargeKWh(3600).

@@ -1,5 +1,3 @@
-vGUESS(0..999).
-
 %time(0..2). date("2020-01-01").
 date(D) :- vP_L(D, I, P_L).
 %time(I) :- vP_L(D, I, P_L).
@@ -27,7 +25,7 @@ date(D) :- vP_L(D, I, P_L).
 :~ vDischarge(D, I, DIS).  [-DIS@2, D, I]
 
 % Charge only the quantity needed of energy taken from the starage is bigger than the consumption
-vP_G(D, I, P_L - P_PV - M - DIS) :- vDischarge(D, I, DIS), vP_L(D, I, P_L), vP_PV(D, I, P_PV), buyMore(D, I, M).
+vP_G(D, I, P_L - P_PV - DIS) :- vDischarge(D, I, DIS), vP_L(D, I, P_L), vP_PV(D, I, P_PV).
 %:~ vP_G(D, I, C). [C@1, D, I]
 :- vP_PV(D, I, P_PV), vP_L(D, I, P_L), P_PV >= P_L, vDischarge(D, I, DIS), DIS > 0.
 %%:- vFrom_grid(D, I, G), vDischarge(D, I, DIS), G > 0, DIS > 0.
@@ -35,18 +33,19 @@ vP_G(D, I, P_L - P_PV - M - DIS) :- vDischarge(D, I, DIS), vP_L(D, I, P_L), vP_P
 
 
 % Sells or charges energy in excess
-{vFeed_in(D, I, F ): vGUESS(F), F  <= -C} = 1 :-  vP_G(D, I, C), C < 0.
-vCharge(D, I, RES) :- vP_G(D, I, C), C < 0, vFeed_in(D, I, F), RES = -C - F.
+%%{vFeed_in(D, I, F ): vGUESS(F), F  <= -C} = 1 :-  vP_G(D, I, C), C < 0.
+%%vCharge(D, I, RES) :- vP_G(D, I, C), C < 0, vFeed_in(D, I, F), RES = -C - F.
+
+{vCharge(D, I, F ): vGUESS(F), F  <= -C} = 1 :-  vP_G(D, I, C), C < 0.
+vFeed_in(D, I, RES) :- vP_G(D, I, C), C < 0, vCharge(D, I, F), RES = -C - F.
+
 vFeed_in(D, I, 0) :- vP_G(D, I, C), C >= 0.
 vCharge(D, I, 0) :- vP_G(D, I, C), C >= 0.
 :- vCharge(D, I, CH), vDischarge(D, I, DIS), CH > 0, DIS > 0.
 
 
-% If buy from grid
-existsBuyMore(D, T) :- buyMore(D, T, M), M > 0.
-buyMore(D, T, 0) :- not existsBuyMore(D, I), date(D), time(I, T).
-vFrom_grid(D, I, M) :- vP_G(D, I, C), buyMore(D, I, M), C < 0.
-vFrom_grid(D, I, M + C) :- vP_G(D, I, C), buyMore(D, I, M), C >= 0.
+vFrom_grid(D, I, 0) :- vP_G(D, I, C), C < 0.
+vFrom_grid(D, I, C) :- vP_G(D, I, C), C >= 0.
 
 
 %%%% VINCOLI
@@ -59,7 +58,11 @@ vFrom_grid(D, I, M + C) :- vP_G(D, I, C), buyMore(D, I, M), C >= 0.
 
 %% P_Smin <= PS_t_d <= P_Smax
 :- P_Smin > P_S, vDischarge(D, I, P_S), vP_Smin(P_Smin).
-:- P_S > P_Smax, vDischarge(D, I, P_S), vP_Smax(P_Smax).
+%:- P_S > P_Smax, vDischarge(D, I, P_S), vP_Smax(P_Smax).
+:- P_Smin > P_S, vCharge(D, I, P_S), vP_SminC(P_Smin).
+%:- P_S > P_Smax, vCharge(D, I, P_S), vP_SmaxC(P_Smax).
+
+
 :- vDischarge(D, I, P_S), vP_L(D, I, P_L), vP_PV(D, I, P_PV), P_L > P_PV, P_S > P_L - P_PV.
 :~ vCharge(D, I, P_SC), vP_L(D, I, P_L), vP_PV(D, I, P_PV), P_PV > P_L, P_SC < P_PV - P_L. [1@1, D, I]
 
