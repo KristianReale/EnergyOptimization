@@ -1,3 +1,4 @@
+import configparser
 import subprocess
 import re
 import os
@@ -7,13 +8,16 @@ import threading
 import uuid
 from collections import OrderedDict
 from datetime import datetime
+from pathlib import Path
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 DLV_PATH = ROOT_PATH + "/../solver/DLV/macosx/dlv-2.1.2-arm64"
 ASP_PROGRAM_PATH = ROOT_PATH + "/../asp_encodings/simplified/encoding_article.asp"
 #ASP_PROGRAM_PATH = "asp_encodings/simplified/encoding.asp"
-ASP_PARAMS_PATH = ROOT_PATH + "/../asp_encodings/simplified/params.asp"
+ASP_PARAMS_PATH = ROOT_PATH + "/../asp_encodings/simplified/params_per_building/"
 ASP_MAXCHARGE_PATH = ROOT_PATH + "/../asp_encodings/simplified/maxChargeKwh.asp"
+
+scheduledExecIds = []
 
 def calculate_best_storage(building, esinit, date, saveResultsFile = None):
     command = [DLV_PATH, ASP_PROGRAM_PATH, ASP_PARAMS_PATH, "--silent"]
@@ -223,6 +227,16 @@ def generate_execution_id():
     return f"{timestamp}_{short_uuid}"
 
 def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption, time_limit, isSchedule = False):
+    buildingName = building.replace(" ", "_")
+    paramFileName = None
+
+    config = configparser.ConfigParser()
+    config.read('asp_encodings/simplified/params_per_building/param_files.properties')
+    if buildingName not in config['default']:
+        return {"ERROR": f"Building '{building}' not found."}
+    print("Building: " + config["default"][buildingName])
+    paramFileName = config["default"][buildingName]
+
 
     with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as tmp:
         print(tmp.name)
@@ -232,7 +246,7 @@ def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, p
         if unit == "kWh":
             counterTime = 1
             for prod in production:
-                print(prod)
+                #print(prod)
                 time_value = prod['time']
                 prod_value = prod['value']
                 cons_value = next((item['value'] for item in consumption if item['time'] == time_value), None)
@@ -241,7 +255,9 @@ def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, p
                 tmp.write(f"vP_L(\"{date}\",\"{time_value}:00\",{cons_value * 100:.00f}).\n")
                 counterTime += 1
 
-    command = ["clingo", ASP_PROGRAM_PATH, factsFile, ASP_PARAMS_PATH, ASP_MAXCHARGE_PATH, "--quiet=1", "--outf=1",
+    #command = ["clingo", ASP_PROGRAM_PATH, factsFile, ASP_PARAMS_PATH, ASP_MAXCHARGE_PATH, "--quiet=1", "--outf=1",
+    #           f"--time-limit={time_limit}"]
+    command = ["clingo", ASP_PROGRAM_PATH, factsFile, ASP_PARAMS_PATH + paramFileName, "--quiet=1", "--outf=1",
                f"--time-limit={time_limit}"]
     print(*command)
     if not isSchedule:
@@ -250,19 +266,35 @@ def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, p
     else:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         execution_id = generate_execution_id()
+        scheduledExecIds.append(execution_id)
         results_filename = f"serviceOutput/solver_output_{execution_id}.txt"
         def monitor():
             stdout, stderr = process.communicate()
             with open(results_filename, "w+") as f:
+                if stderr:
+                    print("Errori:", stderr)
+                    f.write(stderr)
                 f.write(stdout)
-            #notify("Clingo terminato", "L'esecuzione è completata.")
-            print("Risultato:", stdout)
-            if stderr:
-                print("Errori:", stderr)
+                print("Risultato:", stdout)
+            print(f"Esecuzione con id {execution_id} terminata.")
+
 
         # Avvia monitoraggio in background
         threading.Thread(target=monitor, daemon=True).start()
         return {"execution_id": execution_id}
+
+def get_results_from_id(execution_id):
+    results_filename = f"serviceOutput/solver_output_{execution_id}.txt"
+    file = Path(results_filename)
+    if file.exists():
+        with open(results_filename, "r") as f:
+            return asp_to_json(f.read())
+    else:
+        if execution_id in scheduledExecIds:
+            return {"status": "RUNNING"}
+        else:
+            return {"status": "NOT_SCHEDULED"}
+
 
 
 
@@ -393,6 +425,8 @@ def best_grid_transfer_results_parse(result, unit="W"):
     return object_result
 
 def asp_to_json(solver_results, unit="kWh"):
+    if "ANSWER" not in solver_results:
+        return []
     results = best_grid_transfer_results_parse(solver_results, unit)
     toReturn = OrderedDict()
     toReturn["date"] = ""

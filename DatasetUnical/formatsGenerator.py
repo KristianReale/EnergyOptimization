@@ -299,14 +299,19 @@ def generate_final_excel():
                 isOptimum = "OPTIMUM" in lastString
                 numAns = lastString.split("%")[0]
                 results = best_grid_transfer_results_parse(lastString, "KW")
-
                 solving_time = "NA"
-                model_time = "NA"
-                pattern = r"Solving:\s*([\d.]+)s.*?1st Model:\s*([\d.]+)s"
-                match = re.search(pattern, lastString)
+
+                match = re.search(r"Time:\s*([\d.]+)s", lastString.split("%")[0])
                 if match:
-                    solving_time = float(match.group(1))
-                    model_time = float(match.group(2))
+                    secondi = float(match.group(1))
+                    solving_time = secondi
+
+                model_time = "NA"
+                #pattern = r"Solving:\s*([\d.]+)s.*?1st Model:\s*([\d.]+)s"
+                #match = re.search(pattern, lastString)
+                #if match:
+                #    solving_time = float(match.group(1))
+                   # model_time = float(match.group(2))
 
                 #ws1.title = date_file
                 optStr = "NOT KNOWN"
@@ -316,8 +321,10 @@ def generate_final_excel():
                 ws1['W6'] = optStr
                 ws1['V7'] = "Last Answer Set Number: "
                 ws1['W7'] = numAns
-                ws1['V8'] = "Time Last Model: "
+                ws1['V8'] = "Time Last Answer (seconds): "
                 ws1['W8'] = solving_time
+                ws1['V9'] = "Time Last Answer (minutes): "
+                ws1['W9'] = "=W8/60"
                 ws1['L1'] = "ASP Solution"
                 ws1['L2'] = "date"
                 ws1['M2'] = "Discharge(KW)"

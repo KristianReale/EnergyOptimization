@@ -69,7 +69,7 @@ def best_energy_storage_asp():
 '''
 
 @ns.route('/best_grid_transfer')
-class BestGridTransferFromPrediction(Resource):
+class BestGridTransferFromInput(Resource):
     def post(self):
         data = request.get_json()
         building = data["building"]
@@ -87,6 +87,12 @@ class BestGridTransferFromPrediction(Resource):
         return calculate_best_grid_transfer(building, date, init_charge_percentage,
                                                        "kWh", production, consumption, time_execution_limit_secs, isSchedule)
 
+@ns.route('/get_best_grid_transfer')
+class GetBestGridTransfer(Resource):
+    def post(self):
+        data = request.get_json()
+        execution_id = data["execution_id"]
+        return get_results_from_id(execution_id)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host="0.0.0.0", port=5000)
