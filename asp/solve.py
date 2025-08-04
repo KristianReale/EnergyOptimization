@@ -13,6 +13,7 @@ from pathlib import Path
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 DLV_PATH = ROOT_PATH + "/../solver/DLV/macosx/dlv-2.1.2-arm64"
 ASP_PROGRAM_PATH = ROOT_PATH + "/../asp_encodings/simplified/encoding_article.asp"
+ASP_FINAL_CHARGE_PATH = ROOT_PATH + "/../asp_encodings/simplified/final_charge.asp"
 #ASP_PROGRAM_PATH = "asp_encodings/simplified/encoding.asp"
 ASP_PARAMS_PATH = ROOT_PATH + "/../asp_encodings/simplified/params_per_building/"
 ASP_MAXCHARGE_PATH = ROOT_PATH + "/../asp_encodings/simplified/maxChargeKwh.asp"
@@ -226,7 +227,64 @@ def generate_execution_id():
     short_uuid = uuid.uuid4().hex[:8]
     return f"{timestamp}_{short_uuid}"
 
-def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption, time_limit, isSchedule = False):
+
+def recommend_best_discharge(building, date, init_charge_percentage, production_current, consumption_current,
+                                                       discharge, charge, production, consumption, feed_in, from_grid, unit = "kWh"):
+
+    buildingName = building.replace(" ", "_")
+
+
+    config = configparser.ConfigParser()
+    config.read('asp_encodings/simplified/params_per_building/param_files.properties')
+    if buildingName not in config['default']:
+        return {"ERROR": f"Building '{building}' not found."}
+    print("Building: " + config["default"][buildingName])
+    max_charge_paramFileName = "max_charge_" + config["default"][buildingName]
+
+    with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as tmp:
+        print(tmp.name)
+        factsFile = tmp.name
+        tmp.write(f"vE_SinitPercentage({init_charge_percentage * 100:.00f}).\n")
+        tmp.write(f"vE_Sinit(X):- X = P * M / 10000, maxChargeKWh(M), vE_SinitPercentage(P).\n")
+        counterTime = 1
+        for prod in production:
+            # print(prod)
+            time_value = prod['time']
+            prod_value = prod['value']
+            cons_value = next((item['value'] for item in consumption if item['time'] == time_value), None)
+            discharge_value = next((item['value'] for item in discharge if item['time'] == time_value), None)
+            charge_value = next((item['value'] for item in charge if item['time'] == time_value), None)
+            feed_in_value = next((item['value'] for item in feed_in if item['time'] == time_value), None)
+            from_grid_value = next((item['value'] for item in from_grid if item['time'] == time_value), None)
+            tmp.write(f"time({counterTime}, \"{time_value}:00\").\n")
+            tmp.write(f"vP_PV(\"{date}\",\"{time_value}:00\",{prod_value * 100:.00f}).\n")
+            tmp.write(f"vP_L(\"{date}\",\"{time_value}:00\",{cons_value * 100:.00f}).\n")
+            tmp.write(f"vDischarge(\"{date}\",\"{time_value}:00\",{discharge_value * 100:.00f}).\n")
+            tmp.write(f"vCharge(\"{date}\",\"{time_value}:00\",{charge_value * 100:.00f}).\n")
+            tmp.write(f"vFeed_in(\"{date}\",\"{time_value}:00\",{feed_in_value * 100:.00f}).\n")
+            tmp.write(f"vFrom_grid(\"{date}\",\"{time_value}:00\",{from_grid_value * 100:.00f}).\n")
+            counterTime += 1
+
+    command = ["clingo", ASP_FINAL_CHARGE_PATH, factsFile, ASP_PARAMS_PATH + max_charge_paramFileName, "--quiet=1", "--outf=1"]
+    print(*command)
+
+    result = subprocess.run(command, capture_output=True, text=True)
+    moreProgram = result.stdout
+    moreProgram = moreProgram.replace("ANSWER", "%ANSWER")
+    print(moreProgram)
+
+    prod = [{"time": "23:59", "value": production_current}]
+    cons = [{"time": "23:59", "value": consumption_current}]
+    res = calculate_best_grid_transfer(building, date, None,
+                                 unit, prod, cons, None, isSchedule=False, more_program=moreProgram)
+    return {"date": date, "best_discharge": res["discharge"][0]["value"]}
+
+
+def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption, time_limit, isSchedule = False,
+                                 more_program = None):
+
+    if time_limit is None:
+        time_limit = 100000
     buildingName = building.replace(" ", "_")
     paramFileName = None
 
@@ -241,12 +299,12 @@ def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, p
     with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as tmp:
         print(tmp.name)
         factsFile = tmp.name
-        tmp.write(f"vE_SinitPercentage({init_charge_percentage * 100:.00f}).\n")
-
+        if init_charge_percentage is not None:
+            tmp.write(f"vE_SinitPercentage({init_charge_percentage * 100:.00f}).\n")
         if unit == "kWh":
             counterTime = 1
+            print(production)
             for prod in production:
-                #print(prod)
                 time_value = prod['time']
                 prod_value = prod['value']
                 cons_value = next((item['value'] for item in consumption if item['time'] == time_value), None)
@@ -254,14 +312,18 @@ def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, p
                 tmp.write(f"vP_PV(\"{date}\",\"{time_value}:00\",{prod_value * 100:.00f}).\n")
                 tmp.write(f"vP_L(\"{date}\",\"{time_value}:00\",{cons_value * 100:.00f}).\n")
                 counterTime += 1
+        if more_program is not None:
+            tmp.write(more_program)
 
     #command = ["clingo", ASP_PROGRAM_PATH, factsFile, ASP_PARAMS_PATH, ASP_MAXCHARGE_PATH, "--quiet=1", "--outf=1",
     #           f"--time-limit={time_limit}"]
-    command = ["clingo", ASP_PROGRAM_PATH, factsFile, ASP_PARAMS_PATH + paramFileName, "--quiet=1", "--outf=1",
+    command = ["clingo", ASP_PROGRAM_PATH, factsFile, ASP_PARAMS_PATH + paramFileName,
+               ASP_PARAMS_PATH + "max_charge_" + paramFileName, "--quiet=1", "--outf=1",
                f"--time-limit={time_limit}"]
     print(*command)
     if not isSchedule:
         response = subprocess.run(command, capture_output=True, text=True)
+        print(response.stdout)
         return asp_to_json(response.stdout)
     else:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -321,7 +383,7 @@ def best_grid_transfer_results_parse(result, unit="W"):
 
     vP_L_results = []
     decimalDigitDivide = 10
-    if unit == "KW":
+    if unit == "kWh":
         decimalDigitDivide = 100
     for match in matches_vP_L:
         # Suddividere il contenuto in massimo 3 parti

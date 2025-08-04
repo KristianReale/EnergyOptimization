@@ -1,0 +1,1 @@
+maxChargeKWh(3200).

@@ -6,7 +6,7 @@ vDischargeMinPercentage(0).
 vChargeMinPercentage(0).
 %vChargeMaxPercentage(10000).
 
-maxChargeKWh(3600).
+
 
 %UNICAL
 %minimo 5%

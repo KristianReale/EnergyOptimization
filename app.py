@@ -94,5 +94,29 @@ class GetBestGridTransfer(Resource):
         execution_id = data["execution_id"]
         return get_results_from_id(execution_id)
 
+@ns.route('/recommend_best_discharge')
+class RecommendBestGridTransferFromInput(Resource):
+    def post(self):
+        data = request.get_json()
+        building = data["building"]
+        date = data["date"]
+        init_charge_percentage = data["init_charge_percentage"]
+        production_current = data["production_current"]
+        consumption_current = data["consumption_current"]
+        discharge = data["discharge"]
+        charge = data["charge"]
+        production = data["production"]
+        consumption = data["consumption"]
+        feed_in = data["feed_in"]
+        from_grid = data["from_grid"]
+        #time_execution_limit_secs = data["time_execution_limit_secs"]
+        #isSchedule = False
+        #if "schedule" in data:
+        #    isSchedule = bool(data["schedule"])
+
+        return recommend_best_discharge(building, date, init_charge_percentage, production_current, consumption_current,
+                                                    discharge, charge, production, consumption, feed_in, from_grid, unit = "kWh")
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000)

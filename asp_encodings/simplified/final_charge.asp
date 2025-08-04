@@ -4,5 +4,6 @@ vFinalCharge(X + E_Sinit) :- maxI(IMAX), I = IMAX, time(I, T1), X = #sum{-P_S1, 
 vFinalChargePercentage(X) :- X = (P * 10000) / M, maxChargeKWh(M), vFinalCharge(P).
 #show vFinalChargePercentage/1.
 #show vFinalCharge/1.
-
-
+%#show vE_Sinit/1.
+%#show maxChargeKWh/1.
+%#show vE_SinitPercentage/1.

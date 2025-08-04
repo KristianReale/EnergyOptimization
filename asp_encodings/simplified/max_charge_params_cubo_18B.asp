@@ -6,6 +6,8 @@ vDischargeMinPercentage(0).
 vChargeMinPercentage(0).
 %vChargeMaxPercentage(10000).
 
+maxChargeKWh(1600).
+
 %UNICAL
 %minimo 5%
 %unical max 16kw cubo 18B

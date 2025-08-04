@@ -298,7 +298,7 @@ def generate_final_excel():
                 lastString = in_f.read().split("Answer:")[-1]
                 isOptimum = "OPTIMUM" in lastString
                 numAns = lastString.split("%")[0]
-                results = best_grid_transfer_results_parse(lastString, "KW")
+                results = best_grid_transfer_results_parse(lastString, "kWh")
                 solving_time = "NA"
 
                 match = re.search(r"Time:\s*([\d.]+)s", lastString.split("%")[0])
