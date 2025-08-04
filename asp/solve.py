@@ -277,6 +277,9 @@ def recommend_best_discharge(building, date, init_charge_percentage, production_
     cons = [{"time": "23:59", "value": consumption_current}]
     res = calculate_best_grid_transfer(building, date, None,
                                  unit, prod, cons, None, isSchedule=False, more_program=moreProgram)
+
+    if not res:
+        return {"date": date, "best_discharge": 0}
     return {"date": date, "best_discharge": res["discharge"][0]["value"]}
 
 

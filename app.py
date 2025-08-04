@@ -1,13 +1,43 @@
 import json
 
 from flask import Flask, jsonify, request
-from flask_restx import Api, Resource
+from flask_restx import Api, Resource, fields
 from pydantic import BaseModel
 
 from asp.solve import *
 
 app = Flask(__name__)
-api = Api(app, version='1.0', title='My API', description='A simple demo API')
+description = """
+Energy Efficiency Optimization Process for Smart Energy Management
+
+The process of optimizing energy efficiency can be interpreted in three complementary ways:
+- Reduction of the total amount of energy transferred to or drawn from the grid;
+- Minimization of the costs associated with energy purchases;
+- Maximization of self-consumption, thereby reducing dependence on the external grid.
+
+The REST service operates as follows: given as input the energy production and consumption profiles (expressed in kWh) for each time interval of a specific day, the goal is to calculate the optimal amount of energy to be drawn from the battery, in order to minimize the energy purchased from the external grid and the energy fed back into the grid. In other words, the solution aims to maximize battery usage and recharge it using self-produced local energy. It is important to note that the production and consumption values can be derived from forecasts provided by a machine learning (ML) model.
+
+The optimization results depend on the specific building of the University of Calabria being considered, which are:
+- Experimental building Chiodo 2
+- Office Buildings Cubo 18 B
+- Office Buildings Cubo 31B
+- Office Buildings Cubo 41B
+- Office Buildings Cubo 44B
+- Residential buildings Monaci121
+- Residential buildings Monaci122
+- Residential buildings Monaci123
+- Residential buildings Monaci124
+- Residential buildings Monaci223
+
+Each building has internal parameters, already configured within the REST service, which may vary from building to building, including:
+- The minimum and maximum capacity of the storage system (battery);
+- The minimum and maximum amount of energy that can be drawn from the storage system.
+
+Therefore, when invoking the REST service, it will be sufficient to specify the name of the building being considered.
+"""
+api = Api(app, version='1.0', title='Energy Efficiency Optimization Process', description=description)
+
+app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
 ns = api.namespace("", "api")
 
 
@@ -30,54 +60,76 @@ class Results(BaseModel):
     feed_in: list[TimeValue] = field(default_factory=list)
     from_grid: list[TimeValue] = field(default_factory=list)
 
+production_item_model = ns.model('ProductionItem', {
+    'time': fields.String(required=True, description='Timestamp of the production measurement'),
+    'value': fields.Float(required=True, description='Measured or predicted production value in kWh')
+})
+consumption_item_model = ns.model('ConsumptionItem', {
+    'time': fields.String(required=True, description='Timestamp of the consumption measurement'),
+    'value': fields.Float(required=True, description='Measured or predicted consumption value in kWh')
+})
+discharge_item_model = ns.model('DischargeItem', {
+    'time': fields.String(required=True, description='Timestamp of the discharge value'),
+    'value': fields.Float(required=True, description='Discharge value in kWh')
+})
+charge_item_model = ns.model('ChargeItem', {
+    'time': fields.String(required=True, description='Timestamp of the charge value'),
+    'value': fields.Float(required=True, description='Charge value in kWh')
+})
+feed_in_item_model = ns.model('FeedInItem', {
+    'time': fields.String(required=True, description='Timestamp of the Feed-In value'),
+    'value': fields.Float(required=True, description='Feed In Energy value in kWh')
+})
+from_grid_item_model = ns.model('FromGridItem', {
+    'time': fields.String(required=True, description='Timestamp of the From-Grid value'),
+    'value': fields.Float(required=True, description='Energy Taken from Grid in kWh')
+})
+best_grid_transfer_model = ns.model('best_grid_transfer', {
+    'building': fields.String(required=True, description='The Building Name'),
+    'date': fields.String(required=True, description='The day to be considered in the solution calculation.'),
+    'init_charge_percentage': fields.Float(required=False, description='The initial charge percentage of the storage system.'),
+    'production': fields.List(fields.Nested(production_item_model), required=True, description='Array of production values'),
+    'consumption': fields.List(fields.Nested(consumption_item_model), required=True, description='Array of consumption values'),
+    'time_execution_limit_secs': fields.Integer(required=False, description='The time execution limit in seconds.'),
+    'schedule': fields.Boolean(required=False, description='Whether or not to schedule a production schedule.'),
+})
 
-'''@app.route('/best_energy_storage_python', methods=['POST'])
-def best_energy_storage_python():
-    data = request.get_json()
-
-    P = data["P"]
-    Q = data["Q"]
-    PUN = data["PREZZO_ACQUISTO_ENERGIA"]
-    PZ = data["PREZZO_VENDITA_ENERGIA"]
-    CREG_PLUS = data["CREG_PLUS"]
-    POFF_PLUS = data["POFF_PLUS"]
-    CREG_MINUS = data["CREG_MINUS"]
-    POFF_MINUS = data["POFF_MINUS"]
-
-
-
-@app.route('/best_energy_storage', methods=['POST'])
-def best_energy_storage_asp():
-    data = request.get_json()
-    method = request.args.get('method', default="asp", type=str)
-    isStored = request.args.get('stored', default=False, type=bool)
-    if method == 'asp':
-        if isStored:
-            return jsonify(best_storage_results_parse("time(23) date(\"2019-12-03\") vQ(\"2019-12-03\",23,84) vP(\"2019-12-03\",23,0) vPUN(\"2019-12-03\",23,2) vPZ(\"2019-12-03\",23,0) vCREG_PLUS(\"2019-12-03\",23,0) vPOFF_PLUS(\"2019-12-03\",23,0) vCREG_MINUS(\"2019-12-03\",23,0) vPOFF_MINUS(\"2019-12-03\",23,0) time(22) vQ(\"2019-12-03\",22,101) vP(\"2019-12-03\",22,0) vPUN(\"2019-12-03\",22,2) vPZ(\"2019-12-03\",22,0) vCREG_PLUS(\"2019-12-03\",22,0) vPOFF_PLUS(\"2019-12-03\",22,0) vCREG_MINUS(\"2019-12-03\",22,0) vPOFF_MINUS(\"2019-12-03\",22,0) time(21) vQ(\"2019-12-03\",21,92) vP(\"2019-12-03\",21,0) vPUN(\"2019-12-03\",21,2) vPZ(\"2019-12-03\",21,0) vCREG_PLUS(\"2019-12-03\",21,0) vPOFF_PLUS(\"2019-12-03\",21,0) vCREG_MINUS(\"2019-12-03\",21,0) vPOFF_MINUS(\"2019-12-03\",21,0) time(20) vQ(\"2019-12-03\",20,112) vP(\"2019-12-03\",20,0) vPUN(\"2019-12-03\",20,2) vPZ(\"2019-12-03\",20,0) vCREG_PLUS(\"2019-12-03\",20,0) vPOFF_PLUS(\"2019-12-03\",20,0) vCREG_MINUS(\"2019-12-03\",20,0) vPOFF_MINUS(\"2019-12-03\",20,0) time(19) vQ(\"2019-12-03\",19,50) vP(\"2019-12-03\",19,0) vPUN(\"2019-12-03\",19,2) vPZ(\"2019-12-03\",19,0) vCREG_PLUS(\"2019-12-03\",19,0) vPOFF_PLUS(\"2019-12-03\",19,0) vCREG_MINUS(\"2019-12-03\",19,0) vPOFF_MINUS(\"2019-12-03\",19,0) time(18) vQ(\"2019-12-03\",18,55) vP(\"2019-12-03\",18,0) vPUN(\"2019-12-03\",18,2) vPZ(\"2019-12-03\",18,0) vCREG_PLUS(\"2019-12-03\",18,0) vPOFF_PLUS(\"2019-12-03\",18,0) vCREG_MINUS(\"2019-12-03\",18,0) vPOFF_MINUS(\"2019-12-03\",18,0) time(17) vQ(\"2019-12-03\",17,79) vP(\"2019-12-03\",17,0) vPUN(\"2019-12-03\",17,2) vPZ(\"2019-12-03\",17,0) vCREG_PLUS(\"2019-12-03\",17,0) vPOFF_PLUS(\"2019-12-03\",17,0) vCREG_MINUS(\"2019-12-03\",17,0) vPOFF_MINUS(\"2019-12-03\",17,0) time(16) vQ(\"2019-12-03\",16,74) vP(\"2019-12-03\",16,0) vPUN(\"2019-12-03\",16,2) vPZ(\"2019-12-03\",16,0) vCREG_PLUS(\"2019-12-03\",16,0) vPOFF_PLUS(\"2019-12-03\",16,0) vCREG_MINUS(\"2019-12-03\",16,0) vPOFF_MINUS(\"2019-12-03\",16,0) time(15) vQ(\"2019-12-03\",15,58) vP(\"2019-12-03\",15,0) vPUN(\"2019-12-03\",15,2) vPZ(\"2019-12-03\",15,0) vCREG_PLUS(\"2019-12-03\",15,0) vPOFF_PLUS(\"2019-12-03\",15,0) vCREG_MINUS(\"2019-12-03\",15,0) vPOFF_MINUS(\"2019-12-03\",15,0) time(14) vQ(\"2019-12-03\",14,66) vP(\"2019-12-03\",14,0) vPUN(\"2019-12-03\",14,2) vPZ(\"2019-12-03\",14,0) vCREG_PLUS(\"2019-12-03\",14,0) vPOFF_PLUS(\"2019-12-03\",14,0) vCREG_MINUS(\"2019-12-03\",14,0) vPOFF_MINUS(\"2019-12-03\",14,0) time(13) vQ(\"2019-12-03\",13,66) vP(\"2019-12-03\",13,0) vPUN(\"2019-12-03\",13,2) vPZ(\"2019-12-03\",13,0) vCREG_PLUS(\"2019-12-03\",13,0) vPOFF_PLUS(\"2019-12-03\",13,0) vCREG_MINUS(\"2019-12-03\",13,0) vPOFF_MINUS(\"2019-12-03\",13,0) time(12) vQ(\"2019-12-03\",12,81) vP(\"2019-12-03\",12,0) vPUN(\"2019-12-03\",12,2) vPZ(\"2019-12-03\",12,0) vCREG_PLUS(\"2019-12-03\",12,0) vPOFF_PLUS(\"2019-12-03\",12,0) vCREG_MINUS(\"2019-12-03\",12,0) vPOFF_MINUS(\"2019-12-03\",12,0) time(11) vQ(\"2019-12-03\",11,80) vP(\"2019-12-03\",11,0) vPUN(\"2019-12-03\",11,2) vPZ(\"2019-12-03\",11,0) vCREG_PLUS(\"2019-12-03\",11,0) vPOFF_PLUS(\"2019-12-03\",11,0) vCREG_MINUS(\"2019-12-03\",11,0) vPOFF_MINUS(\"2019-12-03\",11,0) time(10) vQ(\"2019-12-03\",10,51) vP(\"2019-12-03\",10,0) vPUN(\"2019-12-03\",10,2) vPZ(\"2019-12-03\",10,0) vCREG_PLUS(\"2019-12-03\",10,0) vPOFF_PLUS(\"2019-12-03\",10,0) vCREG_MINUS(\"2019-12-03\",10,0) vPOFF_MINUS(\"2019-12-03\",10,0) time(9) vQ(\"2019-12-03\",9,59) vP(\"2019-12-03\",9,0) vPUN(\"2019-12-03\",9,2) vPZ(\"2019-12-03\",9,0) vCREG_PLUS(\"2019-12-03\",9,0) vPOFF_PLUS(\"2019-12-03\",9,0) vCREG_MINUS(\"2019-12-03\",9,0) vPOFF_MINUS(\"2019-12-03\",9,0) time(8) vQ(\"2019-12-03\",8,57) vP(\"2019-12-03\",8,0) vPUN(\"2019-12-03\",8,2) vPZ(\"2019-12-03\",8,0) vCREG_PLUS(\"2019-12-03\",8,0) vPOFF_PLUS(\"2019-12-03\",8,0) vCREG_MINUS(\"2019-12-03\",8,0) vPOFF_MINUS(\"2019-12-03\",8,0) time(7) vQ(\"2019-12-03\",7,67) vP(\"2019-12-03\",7,0) vPUN(\"2019-12-03\",7,2) vPZ(\"2019-12-03\",7,0) vCREG_PLUS(\"2019-12-03\",7,0) vPOFF_PLUS(\"2019-12-03\",7,0) vCREG_MINUS(\"2019-12-03\",7,0) vPOFF_MINUS(\"2019-12-03\",7,0) time(6) vQ(\"2019-12-03\",6,61) vP(\"2019-12-03\",6,0) vPUN(\"2019-12-03\",6,2) vPZ(\"2019-12-03\",6,0) vCREG_PLUS(\"2019-12-03\",6,0) vPOFF_PLUS(\"2019-12-03\",6,0) vCREG_MINUS(\"2019-12-03\",6,0) vPOFF_MINUS(\"2019-12-03\",6,0) time(5) vQ(\"2019-12-03\",5,66) vP(\"2019-12-03\",5,0) vPUN(\"2019-12-03\",5,2) vPZ(\"2019-12-03\",5,0) vCREG_PLUS(\"2019-12-03\",5,0) vPOFF_PLUS(\"2019-12-03\",5,0) vCREG_MINUS(\"2019-12-03\",5,0) vPOFF_MINUS(\"2019-12-03\",5,0) time(4) vQ(\"2019-12-03\",4,107) vP(\"2019-12-03\",4,0) vPUN(\"2019-12-03\",4,2) vPZ(\"2019-12-03\",4,0) vCREG_PLUS(\"2019-12-03\",4,0) vPOFF_PLUS(\"2019-12-03\",4,0) vCREG_MINUS(\"2019-12-03\",4,0) vPOFF_MINUS(\"2019-12-03\",4,0) time(3) vQ(\"2019-12-03\",3,213) vP(\"2019-12-03\",3,0) vPUN(\"2019-12-03\",3,2) vPZ(\"2019-12-03\",3,0) vCREG_PLUS(\"2019-12-03\",3,0) vPOFF_PLUS(\"2019-12-03\",3,0) vCREG_MINUS(\"2019-12-03\",3,0) vPOFF_MINUS(\"2019-12-03\",3,0) time(2) vQ(\"2019-12-03\",2,84) vP(\"2019-12-03\",2,0) vPUN(\"2019-12-03\",2,2) vPZ(\"2019-12-03\",2,0) vCREG_PLUS(\"2019-12-03\",2,0) vPOFF_PLUS(\"2019-12-03\",2,0) vCREG_MINUS(\"2019-12-03\",2,0) vPOFF_MINUS(\"2019-12-03\",2,0) time(1) vQ(\"2019-12-03\",1,110) vP(\"2019-12-03\",1,0) vPUN(\"2019-12-03\",1,2) vPZ(\"2019-12-03\",1,0) vCREG_PLUS(\"2019-12-03\",1,0) vPOFF_PLUS(\"2019-12-03\",1,0) vCREG_MINUS(\"2019-12-03\",1,0) vPOFF_MINUS(\"2019-12-03\",1,0) time(0) vQ(\"2019-12-03\",0,147) vP(\"2019-12-03\",0,0) vPUN(\"2019-12-03\",0,2) vPZ(\"2019-12-03\",0,0) vCREG_PLUS(\"2019-12-03\",0,0) vPOFF_PLUS(\"2019-12-03\",0,0) vCREG_MINUS(\"2019-12-03\",0,0) vPOFF_MINUS(\"2019-12-03\",0,0) vSOC(\"2019-12-03\",0,0) vSOC_S(\"2019-12-03\",0,0) vS_M1(\"2019-12-03\",23,14) vC_P(\"2019-12-03\",23,70) vS_P1(\"2019-12-03\",22,1) vS_M1(\"2019-12-03\",22,17) vC_P(\"2019-12-03\",22,85) vC_P(\"2019-12-03\",21,92) vS_P1(\"2019-12-03\",20,2) vS_M1(\"2019-12-03\",20,19) vC_P(\"2019-12-03\",20,95) vC_P(\"2019-12-03\",19,50) vC_P(\"2019-12-03\",18,55) vC_P(\"2019-12-03\",17,79) vC_P(\"2019-12-03\",16,74) vC_P(\"2019-12-03\",15,58) vS_M1(\"2019-12-03\",14,11) vC_P(\"2019-12-03\",14,55) vS_M1(\"2019-12-03\",13,11) vC_P(\"2019-12-03\",13,55) vC_P(\"2019-12-03\",12,81) vC_P(\"2019-12-03\",11,80) vC_P(\"2019-12-03\",10,51) vS_P1(\"2019-12-03\",9,1) vS_M1(\"2019-12-03\",9,10) vC_P(\"2019-12-03\",9,50) vC_P(\"2019-12-03\",8,57) vC_P(\"2019-12-03\",7,67) vC_P(\"2019-12-03\",6,61) vS_M1(\"2019-12-03\",5,11) vC_P(\"2019-12-03\",5,55) vS_P1(\"2019-12-03\",4,1) vS_M1(\"2019-12-03\",4,18) vC_P(\"2019-12-03\",4,90) vS_P1(\"2019-12-03\",3,3) vS_M1(\"2019-12-03\",3,36) vC_P(\"2019-12-03\",3,180) vS_M1(\"2019-12-03\",2,14) vC_P(\"2019-12-03\",2,70) vC_P(\"2019-12-03\",1,110) vS_P1(\"2019-12-03\",0,3) vS_M1(\"2019-12-03\",0,25) vC_P(\"2019-12-03\",0,125) vOVER_I(\"2019-12-03\",23,0) vOVER_I(\"2019-12-03\",22,0) vOVER_I(\"2019-12-03\",21,0) vOVER_I(\"2019-12-03\",20,0) vOVER_I(\"2019-12-03\",19,0) vOVER_I(\"2019-12-03\",18,0) vOVER_I(\"2019-12-03\",17,0) vOVER_I(\"2019-12-03\",16,0) vOVER_I(\"2019-12-03\",15,0) vOVER_I(\"2019-12-03\",14,0) vOVER_I(\"2019-12-03\",13,0) vOVER_I(\"2019-12-03\",12,0) vOVER_I(\"2019-12-03\",11,0) vOVER_I(\"2019-12-03\",10,0) vOVER_I(\"2019-12-03\",9,0) vOVER_I(\"2019-12-03\",8,0) vOVER_I(\"2019-12-03\",7,0) vOVER_I(\"2019-12-03\",6,0) vOVER_I(\"2019-12-03\",5,0) vOVER_I(\"2019-12-03\",4,0) vOVER_I(\"2019-12-03\",3,0) vOVER_I(\"2019-12-03\",2,0) vOVER_I(\"2019-12-03\",1,0) vOVER_I(\"2019-12-03\",0,0) vUNDER_I(\"2019-12-03\",23,84) vUNDER_I(\"2019-12-03\",22,101) vUNDER_I(\"2019-12-03\",21,92) vUNDER_I(\"2019-12-03\",20,112) vUNDER_I(\"2019-12-03\",19,50) vUNDER_I(\"2019-12-03\",18,55) vUNDER_I(\"2019-12-03\",17,79) vUNDER_I(\"2019-12-03\",16,74) vUNDER_I(\"2019-12-03\",15,58) vUNDER_I(\"2019-12-03\",14,66) vUNDER_I(\"2019-12-03\",13,66) vUNDER_I(\"2019-12-03\",12,81) vUNDER_I(\"2019-12-03\",11,80) vUNDER_I(\"2019-12-03\",10,51) vUNDER_I(\"2019-12-03\",9,59) vUNDER_I(\"2019-12-03\",8,57) vUNDER_I(\"2019-12-03\",7,67) vUNDER_I(\"2019-12-03\",6,61) vUNDER_I(\"2019-12-03\",5,66) vUNDER_I(\"2019-12-03\",4,107) vUNDER_I(\"2019-12-03\",3,213) vUNDER_I(\"2019-12-03\",2,84) vUNDER_I(\"2019-12-03\",1,110) vUNDER_I(\"2019-12-03\",0,147) vC_M(\"2019-12-03\",23,0) vC_M(\"2019-12-03\",22,0) vC_M(\"2019-12-03\",21,0) vC_M(\"2019-12-03\",20,0) vC_M(\"2019-12-03\",19,0) vC_M(\"2019-12-03\",18,0) vC_M(\"2019-12-03\",17,0) vC_M(\"2019-12-03\",16,0) vC_M(\"2019-12-03\",15,0) vC_M(\"2019-12-03\",14,0) vC_M(\"2019-12-03\",13,0) vC_M(\"2019-12-03\",12,0) vC_M(\"2019-12-03\",11,0) vC_M(\"2019-12-03\",10,0) vC_M(\"2019-12-03\",9,0) vC_M(\"2019-12-03\",8,0) vC_M(\"2019-12-03\",7,0) vC_M(\"2019-12-03\",6,0) vC_M(\"2019-12-03\",5,0) vC_M(\"2019-12-03\",4,0) vC_M(\"2019-12-03\",3,0) vC_M(\"2019-12-03\",2,0) vC_M(\"2019-12-03\",1,0) vC_M(\"2019-12-03\",0,0) vE_P1(\"2019-12-03\",23,0) vE_P1(\"2019-12-03\",22,0) vE_P1(\"2019-12-03\",21,0) vE_P1(\"2019-12-03\",20,0) vE_P1(\"2019-12-03\",19,0) vE_P1(\"2019-12-03\",18,0) vE_P1(\"2019-12-03\",17,0) vE_P1(\"2019-12-03\",16,0) vE_P1(\"2019-12-03\",15,0) vE_P1(\"2019-12-03\",14,0) vE_P1(\"2019-12-03\",13,0) vE_P1(\"2019-12-03\",12,0) vE_P1(\"2019-12-03\",11,0) vE_P1(\"2019-12-03\",10,0) vE_P1(\"2019-12-03\",9,0) vE_P1(\"2019-12-03\",8,0) vE_P1(\"2019-12-03\",7,0) vE_P1(\"2019-12-03\",6,0) vE_P1(\"2019-12-03\",5,0) vE_P1(\"2019-12-03\",4,0) vE_P1(\"2019-12-03\",3,0) vE_P1(\"2019-12-03\",2,0) vE_P1(\"2019-12-03\",1,0) vE_P1(\"2019-12-03\",0,0) vE_M1(\"2019-12-03\",23,0) vE_M1(\"2019-12-03\",22,0) vE_M1(\"2019-12-03\",21,0) vE_M1(\"2019-12-03\",20,0) vE_M1(\"2019-12-03\",19,0) vE_M1(\"2019-12-03\",18,0) vE_M1(\"2019-12-03\",17,0) vE_M1(\"2019-12-03\",16,0) vE_M1(\"2019-12-03\",15,0) vE_M1(\"2019-12-03\",14,0) vE_M1(\"2019-12-03\",13,0) vE_M1(\"2019-12-03\",12,0) vE_M1(\"2019-12-03\",11,0) vE_M1(\"2019-12-03\",10,0) vE_M1(\"2019-12-03\",9,0) vE_M1(\"2019-12-03\",8,0) vE_M1(\"2019-12-03\",7,0) vE_M1(\"2019-12-03\",6,0) vE_M1(\"2019-12-03\",5,0) vE_M1(\"2019-12-03\",4,0) vE_M1(\"2019-12-03\",3,0) vE_M1(\"2019-12-03\",2,0) vE_M1(\"2019-12-03\",1,0) vE_M1(\"2019-12-03\",0,0) vS_P1(\"2019-12-03\",23,0) vS_P1(\"2019-12-03\",21,0) vS_P1(\"2019-12-03\",19,0) vS_P1(\"2019-12-03\",18,0) vS_P1(\"2019-12-03\",17,0) vS_P1(\"2019-12-03\",16,0) vS_P1(\"2019-12-03\",15,0) vS_P1(\"2019-12-03\",14,0) vS_P1(\"2019-12-03\",13,0) vS_P1(\"2019-12-03\",12,0) vS_P1(\"2019-12-03\",11,0) vS_P1(\"2019-12-03\",10,0) vS_P1(\"2019-12-03\",8,0) vS_P1(\"2019-12-03\",7,0) vS_P1(\"2019-12-03\",6,0) vS_P1(\"2019-12-03\",5,0) vS_P1(\"2019-12-03\",2,0) vS_P1(\"2019-12-03\",1,0) vS_M1(\"2019-12-03\",21,0) vS_M1(\"2019-12-03\",19,0) vS_M1(\"2019-12-03\",18,0) vS_M1(\"2019-12-03\",17,0) vS_M1(\"2019-12-03\",16,0) vS_M1(\"2019-12-03\",15,0) vS_M1(\"2019-12-03\",12,0) vS_M1(\"2019-12-03\",11,0) vS_M1(\"2019-12-03\",10,0) vS_M1(\"2019-12-03\",8,0) vS_M1(\"2019-12-03\",7,0) vS_M1(\"2019-12-03\",6,0) vS_M1(\"2019-12-03\",1,0)"))
-        else:
-            ''''''P = data["P"]
-            Q = data["Q"]
-            PUN = data["PREZZO_ACQUISTO_ENERGIA"]
-            PZ = data["PREZZO_VENDITA_ENERGIA"]
-            CREG_PLUS = data["CREG_PLUS"]
-            POFF_PLUS = data["POFF_PLUS"]
-            CREG_MINUS = data["CREG_MINUS"]
-            POFF_MINUS = data["POFF_MINUS"]
-
-            #return jsonify(calculate_best_storage(P, Q, PUN, PZ, CREG_PLUS, POFF_PLUS, CREG_MINUS, POFF_MINUS))
-    return ""
-'''
+get_best_grid_transfer_model = ns.model('get_best_grid_transfer_model', {
+    'execution_id': fields.String(required=True, description='The Execution ID of an already launched computation'),
+})
+best_grid_transfer_output_data = ns.model('best_grid_transfer_output_data', {
+    'date': fields.String(required=True, description='The day to be considered in the solution calculation.'),
+    'discharge': fields.List(fields.Nested(discharge_item_model), description='Array of discharge values'),
+    'charge': fields.List(fields.Nested(charge_item_model), description='Array of charge values'),
+    'production': fields.List(fields.Nested(production_item_model), description='Array of production values'),
+    'consumption': fields.List(fields.Nested(consumption_item_model), description='Array of consumption values'),
+    'feed_in': fields.List(fields.Nested(feed_in_item_model), description='Array of feed-in values'),
+    'from_grid': fields.List(fields.Nested(from_grid_item_model),  description='Array of from-grid values'),
+})
+api.schema_model('ResponseOneOf', {
+    'oneOf': [
+        {'$ref': '#/definitions/best_grid_transfer_output_data'},
+        {'$ref': '#/definitions/get_best_grid_transfer_model'}
+    ]
+})
 
 @ns.route('/best_grid_transfer')
 class BestGridTransferFromInput(Resource):
+    @ns.expect(best_grid_transfer_model)
+    @ns.response(200, 'Successful Response', 'ResponseOneOf')
     def post(self):
-        data = request.get_json()
+        data = ns.payload
         building = data["building"]
         date = data["date"]
-        init_charge_percentage = data["init_charge_percentage"]
+        init_charge_percentage = 100
+        if "init_charge_percentage" in data:
+            init_charge_percentage = data["init_charge_percentage"]
+
         production = data["production"]
         consumption = data["consumption"]
-        time_execution_limit_secs = data["time_execution_limit_secs"]
+        time_execution_limit_secs = 1200
+        if "time_execution_limit_secs" in data:
+            time_execution_limit_secs = data["time_execution_limit_secs"]
         isSchedule = False
         if "schedule" in data:
             isSchedule = bool(data["schedule"])
@@ -89,18 +141,41 @@ class BestGridTransferFromInput(Resource):
 
 @ns.route('/get_best_grid_transfer')
 class GetBestGridTransfer(Resource):
+    @ns.expect(get_best_grid_transfer_model)
+    @ns.response(200, 'Successful Response', 'best_grid_transfer_output_data')
     def post(self):
-        data = request.get_json()
+        data = ns.payload
         execution_id = data["execution_id"]
         return get_results_from_id(execution_id)
 
+recommend_best_discharge_model = ns.model('recommend_best_discharge', {
+    'building': fields.String(required=True, description='The Building Name'),
+    'date': fields.String(required=True, description='The day to be considered in the solution calculation.'),
+    'init_charge_percentage': fields.Float(required=False, description='The initial charge percentage of the storage system.'),
+    'production_current': fields.Float(required=True, description='Measured or predicted production value in kWh'),
+    'consumption:current': fields.Float(required=True, description='Measured or predicted consumption value in kWh'),
+    'discharge': fields.List(fields.Nested(discharge_item_model), required=True, description='Array of discharge values'),
+    'charge': fields.List(fields.Nested(charge_item_model), required=True, description='Array of charge values'),
+    'production': fields.List(fields.Nested(production_item_model), required=True, description='Array of production values'),
+    'consumption': fields.List(fields.Nested(consumption_item_model), required=True, description='Array of consumption values'),
+    'feed_in': fields.List(fields.Nested(feed_in_item_model), required=True, description='Array of feed-in values'),
+    'from_grid': fields.List(fields.Nested(from_grid_item_model), required=True, description='Array of from-grid values'),
+})
+recommend_best_discharge_model_output = ns.model('recommend_best_discharge_model_output', {
+    'date': fields.String(description='The day to be considered in the solution calculation.'),
+    'best_discharge': fields.Float(description='The best recommended discharge value in kWh.'),
+})
 @ns.route('/recommend_best_discharge')
-class RecommendBestGridTransferFromInput(Resource):
+class RecommendBestùGridTransferFromInput(Resource):
+    @ns.expect(recommend_best_discharge_model)
+    @ns.response(200, 'Successful Response', 'recommend_best_discharge_model_output')
     def post(self):
-        data = request.get_json()
+        data = ns.payload
         building = data["building"]
         date = data["date"]
-        init_charge_percentage = data["init_charge_percentage"]
+        init_charge_percentage = 100
+        if "init_charge_percentage" in data:
+            init_charge_percentage = data["init_charge_percentage"]
         production_current = data["production_current"]
         consumption_current = data["consumption_current"]
         discharge = data["discharge"]

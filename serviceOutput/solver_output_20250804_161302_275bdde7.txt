@@ -1,0 +1,15 @@
+/Users/kristian/PycharmProjects/EnergyOptimization/asp/../asp_encodings/simplified/params_per_building/params_cubo_18B.asp:24:21-36: info: atom does not occur in any rule head:
+  vFinalCharge(#Anon0)
+
+/Users/kristian/PycharmProjects/EnergyOptimization/asp/../asp_encodings/simplified/params_per_building/params_cubo_18B.asp:26:16-31: info: atom does not occur in any rule head:
+  vFinalCharge(X)
+
+% clingo version 5.8.0
+% Reading from ...odings/simplified/encoding_article.asp ...
+% Solving...
+INCONSISTENT
+% 
+% Models         : 0
+% Calls          : 1
+% Time           : 5.243s (Solving: 0.00s 1st Model: 0.00s Unsat: 0.00s)
+% CPU Time       : 5.231s
