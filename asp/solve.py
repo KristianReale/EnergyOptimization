@@ -13,6 +13,7 @@ from pathlib import Path
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 DLV_PATH = ROOT_PATH + "/../solver/DLV/macosx/dlv-2.1.2-arm64"
 ASP_PROGRAM_PATH = ROOT_PATH + "/../asp_encodings/simplified/encoding_article.asp"
+ASP_RECOMMENDATION_PATH = ROOT_PATH + "/../asp_encodings/recommendation/recommend.asp"
 ASP_FINAL_CHARGE_PATH = ROOT_PATH + "/../asp_encodings/simplified/final_charge.asp"
 #ASP_PROGRAM_PATH = "asp_encodings/simplified/encoding.asp"
 ASP_PARAMS_PATH = ROOT_PATH + "/../asp_encodings/simplified/params_per_building/"
@@ -228,7 +229,7 @@ def generate_execution_id():
     return f"{timestamp}_{short_uuid}"
 
 
-def recommend_best_discharge(building, date, init_charge_percentage, production_current, consumption_current,
+def recommend(building, date, time, init_charge_percentage, production_current, consumption_current,
                                                        discharge, charge, production, consumption, feed_in, from_grid, unit = "kWh"):
 
     buildingName = building.replace(" ", "_")
@@ -246,6 +247,8 @@ def recommend_best_discharge(building, date, init_charge_percentage, production_
         factsFile = tmp.name
         tmp.write(f"vE_SinitPercentage({init_charge_percentage * 100:.00f}).\n")
         tmp.write(f"vE_Sinit(X):- X = P * M / 10000, maxChargeKWh(M), vE_SinitPercentage(P).\n")
+        tmp.write(f"date(\"{date}\").\n")
+        tmp.write(f"time(\"{time}\").\n")
         counterTime = 1
         for prod in production:
             # print(prod)
@@ -264,23 +267,26 @@ def recommend_best_discharge(building, date, init_charge_percentage, production_
             tmp.write(f"vFeed_in(\"{date}\",\"{time_value}:00\",{feed_in_value * 100:.00f}).\n")
             tmp.write(f"vFrom_grid(\"{date}\",\"{time_value}:00\",{from_grid_value * 100:.00f}).\n")
             counterTime += 1
+        tmp.write(f"time({counterTime}, \"{time}:00\").\n")
+        tmp.write(f"vP_PV(\"{date}\",\"{time}:00\",{production_current * 100:.00f}).\n")
+        tmp.write(f"vP_L(\"{date}\",\"{time}:00\",{consumption_current * 100:.00f}).\n")
 
-    command = ["clingo", ASP_FINAL_CHARGE_PATH, factsFile, ASP_PARAMS_PATH + max_charge_paramFileName, "--quiet=1", "--outf=1"]
+    command = ["clingo", ASP_RECOMMENDATION_PATH, factsFile, ASP_PARAMS_PATH + max_charge_paramFileName, "--quiet=1", "--outf=1"]
     print(*command)
 
     result = subprocess.run(command, capture_output=True, text=True)
-    moreProgram = result.stdout
-    moreProgram = moreProgram.replace("ANSWER", "%ANSWER")
-    print(moreProgram)
+    #moreProgram = result.stdout
+    #moreProgram = moreProgram.replace("ANSWER", "%ANSWER")
+    print(result.stdout)
 
-    prod = [{"time": "23:59", "value": production_current}]
-    cons = [{"time": "23:59", "value": consumption_current}]
-    res = calculate_best_grid_transfer(building, date, None,
-                                 unit, prod, cons, None, isSchedule=False, more_program=moreProgram)
+    #prod = [{"time": "23:59", "value": production_current}]
+    #cons = [{"time": "23:59", "value": consumption_current}]
+    #res = calculate_best_grid_transfer(building, date, None,
+    #                             unit, prod, cons, None, isSchedule=False, more_program=moreProgram)
 
-    if not res:
-        return {"date": date, "best_discharge": 0}
-    return {"date": date, "best_discharge": res["discharge"][0]["value"]}
+    #if not res:
+    #    return {"date": date, "best_discharge": 0}
+    return {"date": date, "time": time, "recommendation": result.stdout}
 
 
 def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption, time_limit, isSchedule = False,

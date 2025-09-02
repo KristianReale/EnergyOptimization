@@ -148,7 +148,7 @@ class GetBestGridTransfer(Resource):
         execution_id = data["execution_id"]
         return get_results_from_id(execution_id)
 
-recommend_best_discharge_model = ns.model('recommend_best_discharge', {
+recommend_model = ns.model('recommend_model', {
     'building': fields.String(required=True, description='The Building Name'),
     'date': fields.String(required=True, description='The day to be considered in the solution calculation.'),
     'init_charge_percentage': fields.Float(required=False, description='The initial charge percentage of the storage system.'),
@@ -165,15 +165,16 @@ recommend_best_discharge_model_output = ns.model('recommend_best_discharge_model
     'date': fields.String(description='The day to be considered in the solution calculation.'),
     'best_discharge': fields.Float(description='The best recommended discharge value in kWh.'),
 })
-@ns.route('/recommend_best_discharge')
+@ns.route('/recommend')
 class RecommendBestùGridTransferFromInput(Resource):
-    @ns.expect(recommend_best_discharge_model)
+    @ns.expect(recommend_model)
     @ns.response(200, 'Successful Response', 'recommend_best_discharge_model_output')
     def post(self):
         data = ns.payload
         building = data["building"]
         date = data["date"]
-        init_charge_percentage = 100
+        time = data["time"]
+        init_charge_percentage = 0
         if "init_charge_percentage" in data:
             init_charge_percentage = data["init_charge_percentage"]
         production_current = data["production_current"]
@@ -189,7 +190,7 @@ class RecommendBestùGridTransferFromInput(Resource):
         #if "schedule" in data:
         #    isSchedule = bool(data["schedule"])
 
-        return recommend_best_discharge(building, date, init_charge_percentage, production_current, consumption_current,
+        return recommend(building, date, time, init_charge_percentage, production_current, consumption_current,
                                                     discharge, charge, production, consumption, feed_in, from_grid, unit = "kWh")
 
 
