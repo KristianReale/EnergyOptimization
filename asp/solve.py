@@ -14,6 +14,7 @@ ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 DLV_PATH = ROOT_PATH + "/../solver/DLV/macosx/dlv-2.1.2-arm64"
 ASP_PROGRAM_PATH = ROOT_PATH + "/../asp_encodings/simplified/encoding_article.asp"
 ASP_RECOMMENDATION_PATH = ROOT_PATH + "/../asp_encodings/recommendation/recommend.asp"
+ASP_RECOMMENDATION_BATTERY_PATH = ROOT_PATH + "/../asp_encodings/recommendation/recommendation_battery.asp"
 ASP_FINAL_CHARGE_PATH = ROOT_PATH + "/../asp_encodings/simplified/final_charge.asp"
 #ASP_PROGRAM_PATH = "asp_encodings/simplified/encoding.asp"
 ASP_PARAMS_PATH = ROOT_PATH + "/../asp_encodings/simplified/params_per_building/"
@@ -234,13 +235,13 @@ def recommend(building, date, time, init_charge_percentage, production_current, 
 
     buildingName = building.replace(" ", "_")
 
-
     config = configparser.ConfigParser()
     config.read('asp_encodings/simplified/params_per_building/param_files.properties')
     if buildingName not in config['default']:
         return {"ERROR": f"Building '{building}' not found."}
     print("Building: " + config["default"][buildingName])
     max_charge_paramFileName = "max_charge_" + config["default"][buildingName]
+    paramFileName = config["default"][buildingName]
 
     with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as tmp:
         print(tmp.name)
@@ -248,7 +249,7 @@ def recommend(building, date, time, init_charge_percentage, production_current, 
         tmp.write(f"vE_SinitPercentage({init_charge_percentage * 100:.00f}).\n")
         tmp.write(f"vE_Sinit(X):- X = P * M / 10000, maxChargeKWh(M), vE_SinitPercentage(P).\n")
         tmp.write(f"date(\"{date}\").\n")
-        tmp.write(f"time(\"{time}\").\n")
+        tmp.write(f"timeTarget(\"{time}:00\").\n")
         counterTime = 1
         for prod in production:
             # print(prod)
@@ -271,22 +272,26 @@ def recommend(building, date, time, init_charge_percentage, production_current, 
         tmp.write(f"vP_PV(\"{date}\",\"{time}:00\",{production_current * 100:.00f}).\n")
         tmp.write(f"vP_L(\"{date}\",\"{time}:00\",{consumption_current * 100:.00f}).\n")
 
-    command = ["clingo", ASP_RECOMMENDATION_PATH, factsFile, ASP_PARAMS_PATH + max_charge_paramFileName, "--quiet=1", "--outf=1"]
+    command = ["clingo", ASP_RECOMMENDATION_PATH, factsFile, ASP_PARAMS_PATH + max_charge_paramFileName, ASP_PARAMS_PATH + paramFileName, "--quiet=1", "--outf=1"]
     print(*command)
 
     result = subprocess.run(command, capture_output=True, text=True)
+
+    print(result.stdout)
+    results = []
+    results.append(recommendation_results_parse(result.stdout))
+
     #moreProgram = result.stdout
     #moreProgram = moreProgram.replace("ANSWER", "%ANSWER")
-    print(result.stdout)
-
     #prod = [{"time": "23:59", "value": production_current}]
     #cons = [{"time": "23:59", "value": consumption_current}]
     #res = calculate_best_grid_transfer(building, date, None,
-    #                             unit, prod, cons, None, isSchedule=False, more_program=moreProgram)
+     #                            unit, prod, cons, None, isSchedule=False, more_program=moreProgram)
+    #results.append("{discharge: " + res)
 
     #if not res:
     #    return {"date": date, "best_discharge": 0}
-    return {"date": date, "time": time, "recommendation": result.stdout}
+    return {"date": date, "time": time, "recommendation": results}
 
 
 def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption, time_limit, isSchedule = False,
@@ -370,6 +375,18 @@ def get_results_from_id(execution_id):
 
 
 
+def recommendation_results_parse(result):
+    pattern_recommend = r'recommend\((.*?)\)'  # Adatta se il formato cambia
+    matches_recommend = re.findall(pattern_recommend, result)
+    results = []
+    for match in matches_recommend:
+        # Suddividere il contenuto in massimo 3 parti
+        valori = match.split(",")  # Cambia il delimitatore se necessario
+        valori = [v.strip() for v in valori]  # Rimuove spazi extra
+
+        results.append(valori[2].replace("\"", ""))
+
+    return results
 
 def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2):
     #result = "{vP_L(1,1,0), vP_L(1,2,0), vP_L(1,3,0), vP_L(1,4,0), vP_L(1,5,0), vP_L(1,6,0), vP_L(1,7,0), vP_L(1,8,0), vP_L(1,9,0), vP_L(1,10,0), vP_L(1,11,0), vP_L(1,12,0), vP_L(1,13,0), vP_L(1,14,0), vP_L(1,15,0), vP_L(1,16,0), vP_L(1,17,0), vP_L(1,18,0), vP_L(1,19,0), vP_L(1,20,0), vP_L(1,21,0), vP_L(1,22,0), vP_L(1,23,0), vP_S(1,1,999), vP_S(1,2,999), vP_S(1,3,999), vP_S(1,4,999), vP_S(1,5,999), vP_S(1,6,999), vP_S(1,7,999), vP_S(1,8,999), vP_S(1,9,999), vP_S(1,10,999), vP_S(1,11,999), vP_S(1,12,999), vP_S(1,13,999), vP_S(1,14,999), vP_S(1,15,999), vP_S(1,16,999), vP_S(1,17,999), vP_S(1,18,999), vP_S(1,19,999), vP_S(1,20,999), vP_S(1,21,999), vP_S(1,22,999), vP_S(1,23,999), vP_PV(1,1,998), vP_PV(1,2,998), vP_PV(1,3,998), vP_PV(1,4,998), vP_PV(1,5,998), vP_PV(1,6,998), vP_PV(1,7,998), vP_PV(1,8,998), vP_PV(1,9,998), vP_PV(1,10,998), vP_PV(1,11,998), vP_PV(1,12,998), vP_PV(1,13,998), vP_PV(1,14,998), vP_PV(1,15,998), vP_PV(1,16,998), vP_PV(1,17,998), vP_PV(1,18,998), vP_PV(1,19,998), vP_PV(1,20,998), vP_PV(1,21,998), vP_PV(1,22,998), vP_PV(1,23,998)} COST 11442569@1"

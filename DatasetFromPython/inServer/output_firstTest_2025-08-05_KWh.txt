@@ -1,0 +1,10 @@
+% clingo version 5.8.0 (6d1efb6)
+% Reading from ../../encoding_article.asp ...
+UNKNOWN
+% 
+% INTERRUPTED    : 1
+% Models         : 0+
+% Calls          : 1
+% Time           : 12.805s (Solving: 0.00s 1st Model: 0.00s Unsat: 0.00s)
+% CPU Time       : 12.800s
+% Threads        : 8        (Winner: 0)
