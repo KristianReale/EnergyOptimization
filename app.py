@@ -182,7 +182,15 @@ class RecommendBestùGridTransferFromInput(Resource):
         discharge = data["discharge"]
         charge = data["charge"]
         production = data["production"]
+        for d in production:
+            if d["time"] == time:
+                d["value"] = production_current
+                break
         consumption = data["consumption"]
+        for d in consumption:
+            if d["time"] == time:
+                d["value"] = consumption_current
+                break
         feed_in = data["feed_in"]
         from_grid = data["from_grid"]
         #time_execution_limit_secs = data["time_execution_limit_secs"]

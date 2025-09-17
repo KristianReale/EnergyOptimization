@@ -249,6 +249,9 @@ def recommend(building, date, time, init_charge_percentage, production_current, 
         tmp.write(f"vE_Sinit(X):- X = P * M / 10000, maxChargeKWh(M), vE_SinitPercentage(P).\n")
         tmp.write(f"date(\"{date}\").\n")
         tmp.write(f"timeTarget(\"{time}:00\").\n")
+        season = ["winter", "spring", "summer", "autumu"][(int(date.split("-")[1]) % 12) // 3]
+        print(season)
+        tmp.write(f"season({season}).\n")
         counterTime = 1
         for prod in production:
             # print(prod)
