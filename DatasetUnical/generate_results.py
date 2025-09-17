@@ -28,7 +28,7 @@ class TestExecution(unittest.TestCase):
         asp_to_cvs(solverResultsFilePath, resultsFiles, unit="KW")'''
 
     def test_build_excel_results(self):
-        generate_final_excel()
+        generate_final_excel(True)
 
 if __name__ == '__main__':
     unittest.main()

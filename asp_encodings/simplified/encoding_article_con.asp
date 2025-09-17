@@ -28,7 +28,7 @@ vP_G(D, I, P_L - P_PV - DIS) :- vDischarge(D, I, DIS), vP_L(D, I, P_L), vP_PV(D,
 %%{vFeed_in(D, I, F ): vGUESS(F), F  <= -C} = 1 :-  vP_G(D, I, C), C < 0.
 %%vCharge(D, I, RES) :- vP_G(D, I, C), C < 0, vFeed_in(D, I, F), RES = -C - F.
 
-{vCharge(D, I, F ): vGUESS(F), F  <= -C} = 1 :-  vP_G(D, I, C), C < 0.
+{vCharge(D, I, F ): vGUESS(F+), F  <= -C} = 1 :-  vP_G(D, I, C), C < 0.
 vFeed_in(D, I, RES) :- vP_G(D, I, C), C < 0, vCharge(D, I, F), RES = -C - F.
 
 vFeed_in(D, I, 0) :- vP_G(D, I, C), C >= 0.
