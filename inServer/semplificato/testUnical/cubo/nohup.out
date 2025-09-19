@@ -1,0 +1,248 @@
+Executing 2023-08-21_KWh
+params_article.asp:19:21-36: info: atom does not occur in any rule head:
+  vFinalCharge(#Anon0)
+
+params_article.asp:21:16-31: info: atom does not occur in any rule head:
+  vFinalCharge(X)
+
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 19.547 seconds
+clingo Results/cubo/output_cubo_2023-08-21_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-08-22_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 1.516 seconds
+clingo Results/cubo/output_cubo_2023-08-22_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-08-23_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 3.356 seconds
+clingo Results/cubo/output_cubo_2023-08-23_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-08-24_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 10.350 seconds
+clingo Results/cubo/output_cubo_2023-08-24_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-08-25_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 12.103 seconds
+clingo Results/cubo/output_cubo_2023-08-25_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-08-26_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 11.556 seconds
+clingo Results/cubo/output_cubo_2023-08-26_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-08-27_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 4.936 seconds
+clingo Results/cubo/output_cubo_2023-08-27_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-08-28_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 4.243 seconds
+clingo Results/cubo/output_cubo_2023-08-28_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-08-29_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 23.881 seconds
+clingo Results/cubo/output_cubo_2023-08-29_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-08-30_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 2.853 seconds
+clingo Results/cubo/output_cubo_2023-08-30_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-08-31_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 16.943 seconds
+clingo Results/cubo/output_cubo_2023-08-31_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-09-21_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 2.889 seconds
+clingo Results/cubo/output_cubo_2023-09-21_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-09-22_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 9.521 seconds
+clingo Results/cubo/output_cubo_2023-09-22_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-09-23_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 3.993 seconds
+clingo Results/cubo/output_cubo_2023-09-23_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-09-24_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 4.855 seconds
+clingo Results/cubo/output_cubo_2023-09-24_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-09-25_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 17.836 seconds
+clingo Results/cubo/output_cubo_2023-09-25_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-09-26_KWh
+clingo Results/cubo/output_cubo_2023-09-26_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-09-27_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 2.063 seconds
+clingo Results/cubo/output_cubo_2023-09-27_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-09-28_KWh
+clingo Results/cubo/output_cubo_2023-09-28_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-09-29_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 1.073 seconds
+clingo Results/cubo/output_cubo_2023-09-29_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-09-30_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 2.403 seconds
+clingo Results/cubo/output_cubo_2023-09-30_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-10-21_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 7.567 seconds
+clingo Results/cubo/output_cubo_2023-10-21_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-10-22_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 0.884 seconds
+clingo Results/cubo/output_cubo_2023-10-22_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-10-23_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 15.082 seconds
+clingo Results/cubo/output_cubo_2023-10-23_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-10-24_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 15.662 seconds
+clingo Results/cubo/output_cubo_2023-10-24_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-10-25_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 22.277 seconds
+clingo Results/cubo/output_cubo_2023-10-25_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-10-26_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 8.572 seconds
+clingo Results/cubo/output_cubo_2023-10-26_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-10-27_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 2.287 seconds
+clingo Results/cubo/output_cubo_2023-10-27_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-10-28_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 3.806 seconds
+clingo Results/cubo/output_cubo_2023-10-28_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-10-29_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 11.953 seconds
+clingo Results/cubo/output_cubo_2023-10-29_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-10-30_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 22.546 seconds
+clingo Results/cubo/output_cubo_2023-10-30_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-10-31_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 7.683 seconds
+clingo Results/cubo/output_cubo_2023-10-31_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-11-21_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 2.410 seconds
+clingo Results/cubo/output_cubo_2023-11-21_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-11-22_KWh
+clingo Results/cubo/output_cubo_2023-11-22_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-11-23_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 0.209 seconds
+clingo Results/cubo/output_cubo_2023-11-23_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-11-24_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 4.508 seconds
+clingo Results/cubo/output_cubo_2023-11-24_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-11-25_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 3.167 seconds
+clingo Results/cubo/output_cubo_2023-11-25_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-11-26_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 0.044 seconds
+clingo Results/cubo/output_cubo_2023-11-26_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-11-27_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 0.183 seconds
+clingo Results/cubo/output_cubo_2023-11-27_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-11-28_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 4.628 seconds
+clingo Results/cubo/output_cubo_2023-11-28_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-11-29_KWh
+clingo Results/cubo/output_cubo_2023-11-29_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-11-30_KWh
+clingo Results/cubo/output_cubo_2023-11-30_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-12-21_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 5.632 seconds
+clingo Results/cubo/output_cubo_2023-12-21_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-12-22_KWh
+clingo Results/cubo/output_cubo_2023-12-22_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-12-23_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 6.572 seconds
+clingo Results/cubo/output_cubo_2023-12-23_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-12-24_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 0.684 seconds
+clingo Results/cubo/output_cubo_2023-12-24_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-12-25_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 2.272 seconds
+clingo Results/cubo/output_cubo_2023-12-25_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-12-26_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 2.708 seconds
+clingo Results/cubo/output_cubo_2023-12-26_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-12-27_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 5.160 seconds
+clingo Results/cubo/output_cubo_2023-12-27_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-12-28_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 11.354 seconds
+clingo Results/cubo/output_cubo_2023-12-28_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-12-29_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 4.520 seconds
+clingo Results/cubo/output_cubo_2023-12-29_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt
+Executing 2023-12-30_KWh
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 3.945 seconds
+clingo Results/cubo/output_cubo_2023-12-30_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/cubo/tmp.txt

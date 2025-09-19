@@ -1,0 +1,1 @@
+nohup /usr/bin/time -o time_opt.txt /home/dlv/Clingo/clingo-4.5.4-linux-x86_64/clingo encoding_article.asp params_article.asp Facts/H1w_15min/2020-01-01.asp Facts/esinit.asp $1 --parallel-mode=8 > output_15min.txt &

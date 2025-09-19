@@ -1,0 +1,11 @@
+Executing 2025-08-05_KWh
+params_from_python.asp:19:21-36: info: atom does not occur in any rule head:
+  vFinalCharge(#Anon0)
+
+params_from_python.asp:21:16-31: info: atom does not occur in any rule head:
+  vFinalCharge(X)
+
+*** Info : (clingo): Sending shutdown signal...
+*** ERROR: (clingo): solving stopped by signal
+*** Info : (clingo): Shutdown completed in 0.132 seconds
+clingo Results/firstTest/output_firstTest_2025-08-05_KWh.txt maxChargeKWh.asp final_charge.asp --outf=1 > Results/firstTest/tmp.txt
