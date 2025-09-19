@@ -92,19 +92,21 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
         prod = values['prod'][0]
         if unit == "KWh":
             prod = prod  # / 1000
-            prod = round(prod, 2)
+            #prod = round(prod, 2)
         else:
             prod = round(prod, 1)
         cons = values['cons'][0]
+
         if unit == "KWh":
             cons = cons #/ 1000
-            cons = round(cons, 2)
+            #cons = round(cons, 2)
         else:
             cons = round(cons, 1)
+
         production = prod
         consumption = cons
 
-        state_of_charge = 100
+        state_of_charge = 80
         stringToWrite = ""
         minutes_seconds = "00:00"
         if (minute_granularity % 60) != 0:
@@ -119,14 +121,14 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
             if unit == "KWh":
                 stringToWrite += (
                     f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"                    
-                    f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 100:.00f}).\n"
-                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 100:.00f}).\n"
+                    f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 10000000:.00f}).\n"
+                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10000000:.00f}).\n"
                 )
             else:
                 stringToWrite += (
                     f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"
-                    f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 10:.0f}).\n"
-                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10:.0f}).\n"
+                    f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 10000000:.0f}).\n"
+                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10000000:.0f}).\n"
                 )
         elif format == FORMAT.CSV:
             stringToWrite += f"{date} {time}:{minutes_seconds},{production},{consumption}\n"

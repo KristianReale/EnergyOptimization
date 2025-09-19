@@ -242,7 +242,7 @@ def csv_to_json(file):
 
 def generate_final_excel(clingcon = False):
     resultsFolder = os.path.dirname(os.path.abspath(__file__)) + f"/ResultsClingcon"
-    house_list = [f for f in os.listdir(resultsFolder) if os.path.isdir(os.path.join(resultsFolder, f))]
+    house_list = [f for f in os.listdir(resultsFolder) if os.path.isdir(os.path.join(resultsFolder, f)) and f not in ["pythonData"]]
 
     for house in house_list:
         nextInitCharge = 36
