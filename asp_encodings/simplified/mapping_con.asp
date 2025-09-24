@@ -1,3 +1,10 @@
+% vCharge(D, T, C), C is the quantity of energy to be stored to the battery at date D and time T
+% vDischarge(D, T, D), D is the quantity of energy to be taken from the battery at date D and time T
+% vFrom_grid(D, T, G), G is the quantity of energy taken from the grid at date D and time T.
+% vFeed_in(D, T, F), F is the quantity of energy fed to the grid at date D and time T.
+% vFinalCharge(C), C is the energy level of the battery at the and of the day
+% vFinalChargePercentage(P), P is the energy level, expressed in percentage, of the battery at the and of the day
+
 vCharge(D, T, C) :- xP_S(D, I, C), C >= 0, time(I, T).
 vCharge(D, T, 0) :- xP_S(D, I, C), C < 0, time(I, T).
 vDischarge(D, T, -DIS) :- xP_S(D, I, DIS), DIS <= 0, time(I, T).
