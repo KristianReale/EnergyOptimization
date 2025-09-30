@@ -12,8 +12,8 @@ from asp.solve import *
 
 class TestExecution(unittest.TestCase):
     def test_execution(self):
-        folder = "Input"
-        build_from_csv("input.csv", folder ,split_data=SPLIT_DATA.DAY, format=FORMAT.ASP, unit="KWh", what=folder)
+        folder = "Input_alldec"
+        build_from_csv("input.csv", folder ,split_data=SPLIT_DATA.DAY, format=FORMAT.ASP, unit="KWh", what=folder, floating = True)
                     #build_from_csv(f"Input/{filename}", f"Input/{folder}/csv",split_data=SPLIT_DATA.DAY, format=FORMAT.CSV, unit="KWh", what=folder)
                     #build_from_csv(f"Input/{filename}", f"Input/{folder}/json", split_data=SPLIT_DATA.DAY, format=FORMAT.JSON, unit="KWh", what=folder)
 

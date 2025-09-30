@@ -393,37 +393,22 @@ def recommendation_results_parse(result):
 def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingcon = False):
     #result = "{vP_L(1,1,0), vP_L(1,2,0), vP_L(1,3,0), vP_L(1,4,0), vP_L(1,5,0), vP_L(1,6,0), vP_L(1,7,0), vP_L(1,8,0), vP_L(1,9,0), vP_L(1,10,0), vP_L(1,11,0), vP_L(1,12,0), vP_L(1,13,0), vP_L(1,14,0), vP_L(1,15,0), vP_L(1,16,0), vP_L(1,17,0), vP_L(1,18,0), vP_L(1,19,0), vP_L(1,20,0), vP_L(1,21,0), vP_L(1,22,0), vP_L(1,23,0), vP_S(1,1,999), vP_S(1,2,999), vP_S(1,3,999), vP_S(1,4,999), vP_S(1,5,999), vP_S(1,6,999), vP_S(1,7,999), vP_S(1,8,999), vP_S(1,9,999), vP_S(1,10,999), vP_S(1,11,999), vP_S(1,12,999), vP_S(1,13,999), vP_S(1,14,999), vP_S(1,15,999), vP_S(1,16,999), vP_S(1,17,999), vP_S(1,18,999), vP_S(1,19,999), vP_S(1,20,999), vP_S(1,21,999), vP_S(1,22,999), vP_S(1,23,999), vP_PV(1,1,998), vP_PV(1,2,998), vP_PV(1,3,998), vP_PV(1,4,998), vP_PV(1,5,998), vP_PV(1,6,998), vP_PV(1,7,998), vP_PV(1,8,998), vP_PV(1,9,998), vP_PV(1,10,998), vP_PV(1,11,998), vP_PV(1,12,998), vP_PV(1,13,998), vP_PV(1,14,998), vP_PV(1,15,998), vP_PV(1,16,998), vP_PV(1,17,998), vP_PV(1,18,998), vP_PV(1,19,998), vP_PV(1,20,998), vP_PV(1,21,998), vP_PV(1,22,998), vP_PV(1,23,998)} COST 11442569@1"
     #print(result)
-    if clingcon:
-        pattern_vP_L = r'vP_L\((.*?)\)'  # Adatta se il formato cambia
-        pattern_vP_PV = r'vP_PV\((.*?)\)'  # Adatta se il formato cambia
-        pattern_charge = r'xCharge\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)\s*=\s*(-?\d+(?:\.\d+)?)'
-        pattern_discharge = r'xDischarge\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)\s*=\s*(-?\d+(?:\.\d+)?)'
-        pattern_feed_in = r'xFeed_in\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)\s*=\s*(-?\d+(?:\.\d+)?)'
-        pattern_from_grid = r'xFrom_grid\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)\s*=\s*(-?\d+(?:\.\d+)?)'
 
-        # Ricerca
-        matches_vP_L = re.findall(pattern_vP_L, result)
-        matches_vP_PV = re.findall(pattern_vP_PV, result)
-        matches_charge = re.findall(pattern_charge, result)
-        matches_discharge = re.findall(pattern_discharge, result)
-        matches_feed_in = re.findall(pattern_feed_in, result)
-        matches_from_grid = re.findall(pattern_from_grid, result)
-    else:
-        pattern_vP_L = r'vP_L\((.*?)\)'  # Adatta se il formato cambia
-        pattern_vP_PV = r'vP_PV\((.*?)\)'  # Adatta se il formato cambia
-        pattern_vP_S = r'vP_S\((.*?)\)'  # Adatta se il formato cambia
-        pattern_charge = r'vCharge\((.*?)\)'  # Adatta se il formato cambia
-        pattern_discharge = r'vDischarge\((.*?)\)'  # Adatta se il formato cambia
-        pattern_feed_in = r'vFeed_in\((.*?)\)'  # Adatta se il formato cambia
-        pattern_from_grid = r'vFrom_grid\((.*?)\)'  # Adatta se il formato cambia
-
-        matches_vP_L = re.findall(pattern_vP_L, result)
-        matches_vP_PV = re.findall(pattern_vP_PV, result)
-        matches_vP_S = re.findall(pattern_vP_S, result)
-        matches_charge = re.findall(pattern_charge, result)
-        matches_discharge = re.findall(pattern_discharge, result)
-        matches_feed_in = re.findall(pattern_feed_in, result)
-        matches_from_grid = re.findall(pattern_from_grid, result)
+    pattern_vP_L = r'vP_L\((.*?)\)'  # Adatta se il formato cambia
+    pattern_vP_PV = r'vP_PV\((.*?)\)'  # Adatta se il formato cambia
+    pattern_vP_S = r'vP_S\((.*?)\)'  # Adatta se il formato cambia
+    pattern_charge = r'vCharge\((.*?)\)'  # Adatta se il formato cambia
+    pattern_discharge = r'vDischarge\((.*?)\)'  # Adatta se il formato cambia
+    pattern_feed_in = r'vFeed_in\((.*?)\)'  # Adatta se il formato cambia
+    pattern_from_grid = r'vFrom_grid\((.*?)\)'  # Adatta se il formato cambia
+    
+    matches_vP_L = re.findall(pattern_vP_L, result)
+    matches_vP_PV = re.findall(pattern_vP_PV, result)
+    matches_vP_S = re.findall(pattern_vP_S, result)
+    matches_charge = re.findall(pattern_charge, result)
+    matches_discharge = re.findall(pattern_discharge, result)
+    matches_feed_in = re.findall(pattern_feed_in, result)
+    matches_from_grid = re.findall(pattern_from_grid, result)
 
     vP_L_results = []
     decimalDigitDivide = 1
@@ -440,7 +425,7 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingco
         #    valori.append("")
 
         # Creare un oggetto VP_PV con i valori estratti
-        vP_L_results.append({"day" : valori[0].replace("\"", ""), "time" : valori[1].replace("\"", ""), "value" : float(valori[2])/ decimalDigitDivide})
+        vP_L_results.append({"day" : valori[0].replace("\"", ""), "time" : valori[1].replace("\"", ""), "value" : float(valori[2].replace("\"", ""))/ decimalDigitDivide})
     vP_L_results = sorted(vP_L_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
 
     vP_PV_results = []
@@ -454,95 +439,16 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingco
             valori.append("")
 
         # Creare un oggetto VP_PV con i valori estratti
-        vP_PV_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2])/ decimalDigitDivide})
+        vP_PV_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2].replace("\"", ""))/ decimalDigitDivide})
     vP_PV_results = sorted(vP_PV_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
 
-    '''vP_S_results = []
-    for match in matches_vP_S:
-        # Suddividere il contenuto in massimo 3 parti
-        valori = match.split(",")  # Cambia il delimitatore se necessario
-        valori = [v.strip() for v in valori]  # Rimuove spazi extra
-
-        # Riempire con stringhe vuote se ci sono meno di 3 valori
-        while len(valori) < 3:
-            valori.append("")
-
-        # Creare un oggetto VP_PV con i valori estratti
-        vP_S_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2])/ decimalDigitDivide})
-    vP_S_results = sorted(vP_S_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
-'''
     charge_results = []
-
-    for match in matches_charge:
-        if clingcon:
-            date = match[0].replace('"', '')
-            time = match[1].replace('"', '')
-            value = match[2].replace('"', '')
-            print(f"Data: {date}, Ora: {time}, Valore: {value}")
-            charge_results.append({"day": date, "time": time, "value": float(value) / decimalDigitDivide})
-        else:
-            # Suddividere il contenuto in massimo 3 parti
-            valori = match.split(",")  # Cambia il delimitatore se necessario
-            valori = [v.strip() for v in valori]  # Rimuove spazi extra
-
-            # Riempire con stringhe vuote se ci sono meno di 3 valori
-            while len(valori) < 3:
-                valori.append("")
-
-            charge_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2])/ decimalDigitDivide})
-    charge_results = sorted(charge_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
-
     discharge_results = []
-    for match in matches_discharge:
-        if clingcon:
-            date = match[0].replace('"', '')
-            time = match[1].replace('"', '')
-            value = match[2].replace('"', '')
-            print(f"Data: {date}, Ora: {time}, Valore: {value}")
-            discharge_results.append({"day": date, "time": time, "value": float(value) / decimalDigitDivide})
-        else:
-            # Suddividere il contenuto in massimo 3 parti
-            valori = match.split(",")  # Cambia il delimitatore se necessario
-            valori = [v.strip() for v in valori]  # Rimuove spazi extra
-
-            # Riempire con stringhe vuote se ci sono meno di 3 valori
-            while len(valori) < 3:
-                valori.append("")
-
-            # Creare un oggetto VP_PV con i valori estratti
-            discharge_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2])/ decimalDigitDivide})
-    discharge_results = sorted(discharge_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
-
     feed_in_results = []
-    for match in matches_feed_in:
-        if clingcon:
-            date = match[0].replace('"', '')
-            time = match[1].replace('"', '')
-            value = match[2].replace('"', '')
-            print(f"Data: {date}, Ora: {time}, Valore: {value}")
-            feed_in_results.append({"day": date, "time": time, "value": float(value) / decimalDigitDivide})
-        else:
-            # Suddividere il contenuto in massimo 3 parti
-            valori = match.split(",")  # Cambia il delimitatore se necessario
-            valori = [v.strip() for v in valori]  # Rimuove spazi extra
-
-            # Riempire con stringhe vuote se ci sono meno di 3 valori
-            while len(valori) < 3:
-                valori.append("")
-
-            # Creare un oggetto VP_PV con i valori estratti
-            feed_in_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2])/ decimalDigitDivide})
-    feed_in_results = sorted(feed_in_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
-
     from_grid_results = []
-    for match in matches_from_grid:
-        if clingcon:
-            date = match[0].replace('"', '')
-            time = match[1].replace('"', '')
-            value = match[2].replace('"', '')
-            print(f"Data: {date}, Ora: {time}, Valore: {value}")
-            from_grid_results.append({"day": date, "time": time, "value": float(value) / decimalDigitDivide})
-        else:
+
+    if clingcon:
+        for match in matches_vP_S:
             # Suddividere il contenuto in massimo 3 parti
             valori = match.split(",")  # Cambia il delimitatore se necessario
             valori = [v.strip() for v in valori]  # Rimuove spazi extra
@@ -550,11 +456,100 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingco
             # Riempire con stringhe vuote se ci sono meno di 3 valori
             while len(valori) < 3:
                 valori.append("")
+            date = valori[0].replace('"', '')
+            time = valori[1].replace('"', '')
+            value = float(valori[2].replace('"', ''))
+            if value >= 0:
+                charge_results.append({"day": date, "time": time, "value": float(value) / decimalDigitDivide})
+                discharge_results.append({"day": date, "time": time, "value": float(0)})
+            else:
+                charge_results.append({"day": date, "time": time, "value": float(0)})
+                discharge_results.append({"day": date, "time": time, "value": float(value) * -1 / decimalDigitDivide})
 
+            feed_in_results.append({"day": date, "time": time, "value": float(0)})
+            from_grid_results.append({"day": date, "time": time, "value": float(0)})
             # Creare un oggetto VP_PV con i valori estratti
-            from_grid_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2])/ decimalDigitDivide})
-    from_grid_results = sorted(from_grid_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
+    else:
+        for match in matches_charge:
+            if clingcon:
+                date = match[0].replace('"', '')
+                time = match[1].replace('"', '')
+                value = match[2].replace('"', '')
+                print(f"Data: {date}, Ora: {time}, Valore: {value}")
+                charge_results.append({"day": date, "time": time, "value": float(value) / decimalDigitDivide})
+            else:
+                # Suddividere il contenuto in massimo 3 parti
+                valori = match.split(",")  # Cambia il delimitatore se necessario
+                valori = [v.strip() for v in valori]  # Rimuove spazi extra
 
+                # Riempire con stringhe vuote se ci sono meno di 3 valori
+                while len(valori) < 3:
+                    valori.append("")
+
+                charge_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2].replace("\"", ""))/ decimalDigitDivide})
+
+        for match in matches_discharge:
+            if clingcon:
+                date = match[0].replace('"', '')
+                time = match[1].replace('"', '')
+                value = match[2].replace('"', '')
+                print(f"Data: {date}, Ora: {time}, Valore: {value}")
+                discharge_results.append({"day": date, "time": time, "value": float(value) / decimalDigitDivide})
+            else:
+                # Suddividere il contenuto in massimo 3 parti
+                valori = match.split(",")  # Cambia il delimitatore se necessario
+                valori = [v.strip() for v in valori]  # Rimuove spazi extra
+
+                # Riempire con stringhe vuote se ci sono meno di 3 valori
+                while len(valori) < 3:
+                    valori.append("")
+
+                # Creare un oggetto VP_PV con i valori estratti
+                discharge_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2].replace("\"", ""))/ decimalDigitDivide})
+
+
+        for match in matches_feed_in:
+            if clingcon:
+                date = match[0].replace('"', '')
+                time = match[1].replace('"', '')
+                value = match[2].replace('"', '')
+                print(f"Data: {date}, Ora: {time}, Valore: {value}")
+                feed_in_results.append({"day": date, "time": time, "value": float(value) / decimalDigitDivide})
+            else:
+                # Suddividere il contenuto in massimo 3 parti
+                valori = match.split(",")  # Cambia il delimitatore se necessario
+                valori = [v.strip() for v in valori]  # Rimuove spazi extra
+
+                # Riempire con stringhe vuote se ci sono meno di 3 valori
+                while len(valori) < 3:
+                    valori.append("")
+
+                # Creare un oggetto VP_PV con i valori estratti
+                feed_in_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2].replace("\"", ""))/ decimalDigitDivide})
+
+        for match in matches_from_grid:
+            if clingcon:
+                date = match[0].replace('"', '')
+                time = match[1].replace('"', '')
+                value = match[2].replace('"', '')
+                print(f"Data: {date}, Ora: {time}, Valore: {value}")
+                from_grid_results.append({"day": date, "time": time, "value": float(value) / decimalDigitDivide})
+            else:
+                # Suddividere il contenuto in massimo 3 parti
+                valori = match.split(",")  # Cambia il delimitatore se necessario
+                valori = [v.strip() for v in valori]  # Rimuove spazi extra
+
+                # Riempire con stringhe vuote se ci sono meno di 3 valori
+                while len(valori) < 3:
+                    valori.append("")
+
+                # Creare un oggetto VP_PV con i valori estratti
+                from_grid_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2].replace("\"", ""))/ decimalDigitDivide})
+
+    charge_results = sorted(charge_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
+    discharge_results = sorted(discharge_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
+    feed_in_results = sorted(feed_in_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
+    from_grid_results = sorted(from_grid_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
     object_result = {"P_L": vP_L_results, "P_PV": vP_PV_results,  "Charge": charge_results,
                      "Discharge": discharge_results, "Feed-in" : feed_in_results, "From grid": from_grid_results}
     #print(object_result)

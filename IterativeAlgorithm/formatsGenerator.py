@@ -61,7 +61,7 @@ def group_data(input_file, minute_granularity=60): #per media
             #    chargeInitValue = float(state_of_charge)
     return hourly_data
 
-def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP, unit ="W", what="real"):
+def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP, unit ="W", what="real", floating=False):
     hourly_data = group_data(input_file, minute_granularity)
 
     '''for (date, hour), values in hourly_data.items():
@@ -118,11 +118,12 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                     #    f"vE_SinitPercentage({round(state_of_charge)}).\n"
                     #)
                     initChargeStr = f"vE_SinitPercentage({round(state_of_charge)}).\n"
-            if unit == "KWh":
+            #if unit == "KWh":
+            if floating:
                 stringToWrite += (
                     f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"                    
-                    f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 10000000:.00f}).\n"
-                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10000000:.00f}).\n"
+                    f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",\"{production}\").\n"
+                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",\"{consumption}\").\n"
                 )
             else:
                 stringToWrite += (
