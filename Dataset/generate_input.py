@@ -20,8 +20,8 @@ class TestExecution(unittest.TestCase):
                     os.makedirs(f"InputDataset/{houseFolder}_Wh/csv")
                 if not os.path.exists(f"InputDataset/{houseFolder}_Wh/asp"):
                     os.makedirs(f"InputDataset/{houseFolder}_Wh/asp")
-                build_from_csv(f"DatasetDati/{filename}", f"InputDataset/{houseFolder}_Wh/asp",split_data=SPLIT_DATA.DAY, format=FORMAT.ASP, unit="KW")
-                build_from_csv(f"DatasetDati/{filename}", f"InputDataset/{houseFolder}_Wh/csv",split_data=SPLIT_DATA.DAY, format=FORMAT.CSV, unit="KW")
+                build_from_csv(f"DatasetDati/{filename}", f"InputDataset/{houseFolder}_15_min_Wh/asp",split_data=SPLIT_DATA.DAY, format=FORMAT.ASP, unit="Wh", minute_granularity=15, noRound=True)
+                build_from_csv(f"DatasetDati/{filename}", f"InputDataset/{houseFolder}_15_min_Wh/csv",split_data=SPLIT_DATA.DAY, format=FORMAT.CSV, unit="Wh", minute_granularity=15, noRound=True)
 
 if __name__ == '__main__':
     unittest.main()
