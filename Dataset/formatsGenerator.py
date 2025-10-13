@@ -156,14 +156,22 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                         f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10:.0f}).\n"
                     )
             else:
+                strPositive = ""
+                diff = 0
+                diff = production - consumption
+                if production >= consumption:
+                    strPositive = "positive"
+                else:
+                    strPositive = "negative"
                 stringToWrite += (
                     f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"
                     f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",\"{production}\").\n"
-                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",\"{consumption}\").\n"
+                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",\"{consumption}\").\n"                    
+                    f"diffPV_L(\"{date}\",\"{time}:{minutes_seconds}\", \"{diff}\", {strPositive}).\n"
                 )
         elif format == FORMAT.CSV:
             stringToWrite += f"{date} {time}:{minutes_seconds},{discharge},{charge},{production},{consumption},{feed_in},{from_grid},{state_of_charge}\n"
-
+            #stringToWrite += f"{date} {time}:{minutes_seconds},{production}\n"
         if split_data == SPLIT_DATA.DAY:
             if date not in outputParts:
                 outputParts[date] = stringToWrite
@@ -183,6 +191,7 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
             header = "date,Discharge(KW),Charge(KW),Production(KW),Consumption(KW),Feed-in(KW),From grid(KW),State of Charge(%)\n"
         else:
             header = "date,Discharge(W),Charge(W),Production(W),Consumption(W),Feed-in(W),From grid(W),State of Charge(%)\n"
+        #header = "date,Production(KW)\n"
 
     for key in outputParts:
         with open(output_dir + "/" + str(key) + extension, 'w') as outfile:

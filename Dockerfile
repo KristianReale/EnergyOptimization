@@ -1,11 +1,30 @@
 # Usa l'ultima immagine ufficiale di Python (attualmente è Python 3.12.x)
 FROM python:3.12-slim
 
-RUN apt-get update && apt-get install -y \
-    curl \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get update -y && apt-get install gringo -y
+#RUN apt-get update && apt-get install -y \
+#    curl \
+#    ca-certificates \
+#    && rm -rf /var/lib/apt/lists/* \
+#    && apt-get update -y && apt-get install gringo -y \
+
+# Installa dipendenze di sistema minime per conda
+RUN apt-get update && apt-get install -y wget bzip2 && rm -rf /var/lib/apt/lists/*
+
+# Installa Miniconda in /opt/conda
+ENV CONDA_DIR=/opt/conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
+    bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
+    rm /tmp/miniconda.sh && \
+    $CONDA_DIR/bin/conda clean -afy
+
+# Aggiungi conda al PATH
+ENV PATH=$CONDA_DIR/bin:$PATH
+
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+
+RUN conda install -c potassco -c conda-forge clingo-lp
 
 # Imposta la directory di lavoro dentro il container
 WORKDIR /app

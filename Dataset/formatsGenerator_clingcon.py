@@ -240,9 +240,9 @@ def csv_to_json(file):
     data = data["columns"]
 
 
-def generate_final_excel(clingcon = False):
+def generate_final_excel(clingoLP = False):
     resultsFolder = os.path.dirname(os.path.abspath(__file__)) + f"/ResultsClingcon"
-    house_list = [f for f in os.listdir(resultsFolder) if os.path.isdir(os.path.join(resultsFolder, f)) and f not in ["pythonData"]]
+    house_list = [f for f in os.listdir(resultsFolder) if os.path.isdir(os.path.join(resultsFolder, f)) and f not in ["pythonData"] and not f.endswith("_test")]
 
     for house in house_list:
         nextInitCharge =10000
@@ -285,8 +285,8 @@ def generate_final_excel(clingcon = False):
                     ws1[f"A{i}"] = date
                     #ws1[f"B{i}"] = float(discharge)
                     #ws1[f"C{i}"] = float(charge)
-                    ws1[f"D{i}"] = str(production).replace(".", ",")
-                    ws1[f"E{i}"] = str(consumption).replace(".", ",")
+                    ws1[f"D{i}"] = float(production)
+                    ws1[f"E{i}"] = float(consumption)
                     #ws1[f"F{i}"] = float(feed_in)
                     #ws1[f"G{i}"] = float(from_grid)
                     #ws1[f"H{i}"] = float(state_of_charge) / 100
@@ -298,7 +298,7 @@ def generate_final_excel(clingcon = False):
                 lastString = in_f.read().split("Answer:")[-1]
                 isOptimum = "OPTIMUM" in lastString
                 numAns = lastString.split("%")[0]
-                results = best_grid_transfer_results_parse(lastString, "kWh", decimal_digits=0, clingcon=clingcon)
+                results = best_grid_transfer_results_parse(lastString, "kWh", decimal_digits=0, clingoLP=clingoLP)
                 print(results)
                 solving_time = "NA"
 
@@ -367,12 +367,14 @@ def generate_final_excel(clingcon = False):
 
 
                     ws1[f"L{i}"] = date
-                    ws1[f"M{i}"] = str(discharge).replace(".", ",")
-                    ws1[f"N{i}"] = str(charge).replace(".", ",")
-                    ws1[f"O{i}"] = str(production).replace(".", ",")
-                    ws1[f"P{i}"] = str(consumption).replace(".", ",")
-                    ws1[f"Q{i}"] = str(feedin).replace(".", ",")
-                    ws1[f"R{i}"] = str(fromgrid).replace(".", ",")
+                    ws1[f"M{i}"] = discharge
+                    ws1[f"N{i}"] = charge
+                    ws1[f"O{i}"] = production
+                    #ws1[f"O{i}"].number_format = '0.###############'
+
+                    ws1[f"P{i}"] = consumption
+                    ws1[f"Q{i}"] = feedin
+                    ws1[f"R{i}"] = fromgrid
                     ws1[f"S{i}"] = f"=T{i}/V$1"
                     ws1[f"S{i}"].number_format = '0.00%'
                     if (i == 3):
@@ -391,7 +393,7 @@ def generate_final_excel(clingcon = False):
             # ws1['T1'] = ws1['S1'].value * 36
             ws1['T1'] = float(nextInitCharge)
 
-            if not clingcon:
+            if not clingoLP:
                 finalChargeFileName = input_file_asp.rsplit(".", 1)[0] + "_finalCharge.asp"
                 #print("AAA " + finalChargeFileName)
                 with open(finalChargeFileName, 'r') as in_fCharge:
@@ -401,6 +403,6 @@ def generate_final_excel(clingcon = False):
                     for match in matches_initCharge:
                         nextInitCharge = float(match) / 100
 
-        wb.save(excel_file)
+        wb.save(excel_file, )
 
 

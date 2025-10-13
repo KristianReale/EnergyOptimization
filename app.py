@@ -137,7 +137,7 @@ class BestGridTransferFromInput(Resource):
         #return json.dumps(calculate_best_grid_transfer(building, date, init_charge_percentage,
         #                                               "kWh", production, consumption, time_execution_limit_secs))
         return calculate_best_grid_transfer(building, date, init_charge_percentage,
-                                                       "kWh", production, consumption, time_execution_limit_secs, isSchedule)
+                                                       "kWh", production, consumption, time_execution_limit_secs, isSchedule, clingoLP = True)
 
 @ns.route('/get_best_grid_transfer')
 class GetBestGridTransfer(Resource):
@@ -203,4 +203,4 @@ class RecommendBestùGridTransferFromInput(Resource):
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)

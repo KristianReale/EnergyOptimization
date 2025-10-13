@@ -13,11 +13,13 @@ from pathlib import Path
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 DLV_PATH = ROOT_PATH + "/../solver/DLV/macosx/dlv-2.1.2-arm64"
 ASP_PROGRAM_PATH = ROOT_PATH + "/../asp_encodings/simplified/encoding_article.asp"
+ASP_PROGRAM_PATH_CLINGOLP = ROOT_PATH + "/../asp_encodings/simplified/encoding_article_cl_lp.asp"
 ASP_RECOMMENDATION_PATH = ROOT_PATH + "/../asp_encodings/recommendation/recommend.asp"
 ASP_RECOMMENDATION_BATTERY_PATH = ROOT_PATH + "/../asp_encodings/recommendation/recommendation_battery.asp"
 ASP_FINAL_CHARGE_PATH = ROOT_PATH + "/../asp_encodings/simplified/final_charge.asp"
 #ASP_PROGRAM_PATH = "asp_encodings/simplified/encoding.asp"
 ASP_PARAMS_PATH = ROOT_PATH + "/../asp_encodings/simplified/params_per_building/"
+ASP_PARAMS_PATH_CLINGOLP = ROOT_PATH + "/../asp_encodings/simplified/params_per_building_clingolp/"
 ASP_MAXCHARGE_PATH = ROOT_PATH + "/../asp_encodings/simplified/maxChargeKwh.asp"
 
 scheduledExecIds = []
@@ -297,15 +299,17 @@ def recommend(building, date, time, init_charge_percentage, production_current, 
 
 
 def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption, time_limit, isSchedule = False,
-                                 more_program = None):
-
+                                 more_program = None, clingoLP = False):
     if time_limit is None:
         time_limit = 100000
     buildingName = building.replace(" ", "_")
     paramFileName = None
 
     config = configparser.ConfigParser()
-    config.read('asp_encodings/simplified/params_per_building/param_files.properties')
+    paramsFolder = "params_per_building"
+    if clingoLP:
+        paramsFolder = "params_per_building_clingolp"
+    config.read(f'asp_encodings/simplified/{paramsFolder}/param_files.properties')
     if buildingName not in config['default']:
         return {"ERROR": f"Building '{building}' not found."}
     print("Building: " + config["default"][buildingName])
@@ -316,17 +320,31 @@ def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, p
         print(tmp.name)
         factsFile = tmp.name
         if init_charge_percentage is not None:
-            tmp.write(f"vE_SinitPercentage({init_charge_percentage * 100:.00f}).\n")
+            if clingoLP:
+                tmp.write(f"vE_SinitPercentage({init_charge_percentage}).\n")
+            else:
+                tmp.write(f"vE_SinitPercentage({init_charge_percentage * 100:.00f}).\n")
         if unit == "kWh":
             counterTime = 1
-            print(production)
             for prod in production:
                 time_value = prod['time']
                 prod_value = prod['value']
                 cons_value = next((item['value'] for item in consumption if item['time'] == time_value), None)
-                tmp.write(f"time({counterTime}, \"{time_value}:00\").\n")
-                tmp.write(f"vP_PV(\"{date}\",\"{time_value}:00\",{prod_value * 100:.00f}).\n")
-                tmp.write(f"vP_L(\"{date}\",\"{time_value}:00\",{cons_value * 100:.00f}).\n")
+                if clingoLP:
+                    strPositive = ""
+                    diff = prod_value - cons_value
+                    if prod_value >= cons_value:
+                        strPositive = "positive"
+                    else:
+                        strPositive = "negative"
+                    tmp.write(f"time({counterTime}, \"{time_value}:00\").\n")
+                    tmp.write(f"vP_PV(\"{date}\",\"{time_value}:00\",\"{prod_value}\").\n")
+                    tmp.write(f"vP_L(\"{date}\",\"{time_value}:00\",\"{cons_value}\").\n")
+                    tmp.write(f"diffPV_L(\"{date}\",\"{time_value}:00\", \"{diff}\", {strPositive}).\n")
+                else:
+                    tmp.write(f"time({counterTime}, \"{time_value}:00\").\n")
+                    tmp.write(f"vP_PV(\"{date}\",\"{time_value}:00\",{prod_value * 100:.00f}).\n")
+                    tmp.write(f"vP_L(\"{date}\",\"{time_value}:00\",{cons_value * 100:.00f}).\n")
                 counterTime += 1
         if more_program is not None:
             tmp.write(more_program)
@@ -336,11 +354,15 @@ def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, p
     command = ["clingo", ASP_PROGRAM_PATH, factsFile, ASP_PARAMS_PATH + paramFileName,
                ASP_PARAMS_PATH + "max_charge_" + paramFileName, "--quiet=1", "--outf=1",
                f"--time-limit={time_limit}"]
+    if clingoLP:
+        command = ["clingoLP", ASP_PROGRAM_PATH_CLINGOLP, factsFile, ASP_PARAMS_PATH_CLINGOLP + paramFileName,
+                   ASP_PARAMS_PATH + "max_charge_" + paramFileName, "--quiet=1", "--outf=1",
+                   f"--time-limit={time_limit}", "--show-lp-solution"]
     print(*command)
     if not isSchedule:
         response = subprocess.run(command, capture_output=True, text=True)
-        print(response.stdout)
-        return asp_to_json(response.stdout)
+        #print(response.stdout)
+        return asp_to_json(response.stdout, clingoLP=clingoLP)
     else:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         execution_id = generate_execution_id()
@@ -361,12 +383,12 @@ def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, p
         threading.Thread(target=monitor, daemon=True).start()
         return {"execution_id": execution_id}
 
-def get_results_from_id(execution_id):
+def get_results_from_id(execution_id, clingoLP = False):
     results_filename = f"serviceOutput/solver_output_{execution_id}.txt"
     file = Path(results_filename)
     if file.exists():
         with open(results_filename, "r") as f:
-            return asp_to_json(f.read())
+            return asp_to_json(f.read(), clingoLP=clingoLP)
     else:
         if execution_id in scheduledExecIds:
             return {"status": "RUNNING"}
@@ -390,13 +412,14 @@ def recommendation_results_parse(result):
 
     return results
 
-def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingcon = False):
+def best_grid_transfer_results_parse(result, unit="W", decimal_digits=0, clingoLP = False):
     #result = "{vP_L(1,1,0), vP_L(1,2,0), vP_L(1,3,0), vP_L(1,4,0), vP_L(1,5,0), vP_L(1,6,0), vP_L(1,7,0), vP_L(1,8,0), vP_L(1,9,0), vP_L(1,10,0), vP_L(1,11,0), vP_L(1,12,0), vP_L(1,13,0), vP_L(1,14,0), vP_L(1,15,0), vP_L(1,16,0), vP_L(1,17,0), vP_L(1,18,0), vP_L(1,19,0), vP_L(1,20,0), vP_L(1,21,0), vP_L(1,22,0), vP_L(1,23,0), vP_S(1,1,999), vP_S(1,2,999), vP_S(1,3,999), vP_S(1,4,999), vP_S(1,5,999), vP_S(1,6,999), vP_S(1,7,999), vP_S(1,8,999), vP_S(1,9,999), vP_S(1,10,999), vP_S(1,11,999), vP_S(1,12,999), vP_S(1,13,999), vP_S(1,14,999), vP_S(1,15,999), vP_S(1,16,999), vP_S(1,17,999), vP_S(1,18,999), vP_S(1,19,999), vP_S(1,20,999), vP_S(1,21,999), vP_S(1,22,999), vP_S(1,23,999), vP_PV(1,1,998), vP_PV(1,2,998), vP_PV(1,3,998), vP_PV(1,4,998), vP_PV(1,5,998), vP_PV(1,6,998), vP_PV(1,7,998), vP_PV(1,8,998), vP_PV(1,9,998), vP_PV(1,10,998), vP_PV(1,11,998), vP_PV(1,12,998), vP_PV(1,13,998), vP_PV(1,14,998), vP_PV(1,15,998), vP_PV(1,16,998), vP_PV(1,17,998), vP_PV(1,18,998), vP_PV(1,19,998), vP_PV(1,20,998), vP_PV(1,21,998), vP_PV(1,22,998), vP_PV(1,23,998)} COST 11442569@1"
     #print(result)
 
     pattern_vP_L = r'vP_L\((.*?)\)'  # Adatta se il formato cambia
     pattern_vP_PV = r'vP_PV\((.*?)\)'  # Adatta se il formato cambia
     pattern_vP_S = r'vP_S\((.*?)\)'  # Adatta se il formato cambia
+    pattern_xP_S = r'xP_S\("([^"]+)",\s*([\d.]+),\s*"([^"]+)"\)\s*=\s*([-+]?\d+(?:\.\d+)?)'  # Adatta se il formato cambia
     pattern_charge = r'vCharge\((.*?)\)'  # Adatta se il formato cambia
     pattern_discharge = r'vDischarge\((.*?)\)'  # Adatta se il formato cambia
     pattern_feed_in = r'vFeed_in\((.*?)\)'  # Adatta se il formato cambia
@@ -405,6 +428,7 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingco
     matches_vP_L = re.findall(pattern_vP_L, result)
     matches_vP_PV = re.findall(pattern_vP_PV, result)
     matches_vP_S = re.findall(pattern_vP_S, result)
+    matches_xP_S = re.findall(pattern_xP_S, result)
     matches_charge = re.findall(pattern_charge, result)
     matches_discharge = re.findall(pattern_discharge, result)
     matches_feed_in = re.findall(pattern_feed_in, result)
@@ -426,7 +450,7 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingco
 
         # Creare un oggetto VP_PV con i valori estratti
         vP_L_results.append({"day" : valori[0].replace("\"", ""), "time" : valori[1].replace("\"", ""), "value" : float(valori[2].replace("\"", ""))/ decimalDigitDivide})
-    vP_L_results = sorted(vP_L_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
+
 
     vP_PV_results = []
     for match in matches_vP_PV:
@@ -440,25 +464,31 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingco
 
         # Creare un oggetto VP_PV con i valori estratti
         vP_PV_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2].replace("\"", ""))/ decimalDigitDivide})
-    vP_PV_results = sorted(vP_PV_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
 
     charge_results = []
     discharge_results = []
     feed_in_results = []
     from_grid_results = []
 
-    if clingcon:
-        for match in matches_vP_S:
+    if clingoLP:
+        date = None
+        time = None
+        value = None
+        '''for match in matches_vP_S:
             # Suddividere il contenuto in massimo 3 parti
             valori = match.split(",")  # Cambia il delimitatore se necessario
             valori = [v.strip() for v in valori]  # Rimuove spazi extra
-
             # Riempire con stringhe vuote se ci sono meno di 3 valori
             while len(valori) < 3:
                 valori.append("")
             date = valori[0].replace('"', '')
             time = valori[1].replace('"', '')
-            value = float(valori[2].replace('"', ''))
+            value = float(valori[2].replace('"', ''))'''
+        for match in matches_xP_S:
+            print("yes")
+            date, timeI, time, value = match
+            value = float(value.replace("\"", ""))
+
             if value >= 0:
                 charge_results.append({"day": date, "time": time, "value": float(value) / decimalDigitDivide})
                 discharge_results.append({"day": date, "time": time, "value": float(0)})
@@ -466,12 +496,36 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingco
                 charge_results.append({"day": date, "time": time, "value": float(0)})
                 discharge_results.append({"day": date, "time": time, "value": float(value) * -1 / decimalDigitDivide})
 
-            feed_in_results.append({"day": date, "time": time, "value": float(0)})
-            from_grid_results.append({"day": date, "time": time, "value": float(0)})
+            PV_value = next(
+                (item["value"] for item in vP_PV_results if item["day"] == date and item["time"] == time)
+            )
+            PL_value = next(
+                (item["value"] for item in vP_L_results if item["day"] == date and item["time"] == time)
+            )
+            #vFeed_in(D, T, P_PV - P_L - C): - time(I, T), vP_L(D, T, P_L), vP_PV(D, T, P_PV), P_PV > P_L, vCharge(D, T,                                                                                                                  C).
+            #vFeed_in(D, T, 0): - vP_L(D, T, P_L), vP_PV(D, T, P_PV), P_PV <= P_L.
+            feed_in = float(0)
+            if PV_value > PL_value and value >= 0:
+                feed_in = PV_value - PL_value - value
+                epsilon = 1e-6  # soglia di tolleranza
+                if abs(feed_in) < epsilon:
+                    feed_in = 0.0
+            feed_in_results.append({"day": date, "time": time, "value": feed_in})
+
+            #vFrom_grid(D, T, P_L - P_PV - DIS): - time(I, T), vP_L(D, T, P_L), vP_PV(D, T,
+            #   P_PV), P_L > P_PV, vDischarge(D, T,                                                                                                                   DIS).
+            #vFrom_grid(D, T, 0): - vP_L(D, T, P_L), vP_PV(D, T, P_PV), P_L <= P_PV.
+            from_grid = float(0)
+            if PL_value > PV_value and value <= 0:
+                from_grid = PL_value - PV_value + value
+                epsilon = 1e-6  # soglia di tolleranza
+                if abs(from_grid) < epsilon:
+                    from_grid = 0.0
+            from_grid_results.append({"day": date, "time": time, "value": from_grid})
             # Creare un oggetto VP_PV con i valori estratti
     else:
         for match in matches_charge:
-            if clingcon:
+            if clingoLP:
                 date = match[0].replace('"', '')
                 time = match[1].replace('"', '')
                 value = match[2].replace('"', '')
@@ -489,7 +543,7 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingco
                 charge_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2].replace("\"", ""))/ decimalDigitDivide})
 
         for match in matches_discharge:
-            if clingcon:
+            if clingoLP:
                 date = match[0].replace('"', '')
                 time = match[1].replace('"', '')
                 value = match[2].replace('"', '')
@@ -509,7 +563,7 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingco
 
 
         for match in matches_feed_in:
-            if clingcon:
+            if clingoLP:
                 date = match[0].replace('"', '')
                 time = match[1].replace('"', '')
                 value = match[2].replace('"', '')
@@ -528,7 +582,7 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingco
                 feed_in_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2].replace("\"", ""))/ decimalDigitDivide})
 
         for match in matches_from_grid:
-            if clingcon:
+            if clingoLP:
                 date = match[0].replace('"', '')
                 time = match[1].replace('"', '')
                 value = match[2].replace('"', '')
@@ -546,6 +600,8 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingco
                 # Creare un oggetto VP_PV con i valori estratti
                 from_grid_results.append({"day": valori[0].replace("\"", ""), "time": valori[1].replace("\"", ""), "value": float(valori[2].replace("\"", ""))/ decimalDigitDivide})
 
+    vP_L_results = sorted(vP_L_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
+    vP_PV_results = sorted(vP_PV_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
     charge_results = sorted(charge_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
     discharge_results = sorted(discharge_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
     feed_in_results = sorted(feed_in_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
@@ -555,10 +611,12 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=2, clingco
     #print(object_result)
     return object_result
 
-def asp_to_json(solver_results, unit="kWh"):
-    if "ANSWER" not in solver_results:
-        return []
-    results = best_grid_transfer_results_parse(solver_results, unit)
+def asp_to_json(solver_results, unit="kWh", clingoLP = False):
+    if not clingoLP:
+        if "ANSWER" not in solver_results:
+            return []
+    results = best_grid_transfer_results_parse(solver_results, unit, clingoLP=clingoLP)
+    print(results)
     toReturn = OrderedDict()
     toReturn["date"] = ""
     #toReturn["unit"] = "kWh"
