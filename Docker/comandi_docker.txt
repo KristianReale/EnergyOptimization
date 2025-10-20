@@ -1,5 +1,5 @@
-docker build -t tech4you/energy_optimization_service:0.0.2 . --platform=linux/amd64 --no-cache
-docker save -o Docker/energy_optimization_service.tar tech4you/energy_optimization_service:0.0.1
+docker build -t tech4you/energy_optimization_service:0.0.3 . --platform=linux/amd64 --no-cache
+docker save -o Docker/energy_optimization_service_v3.tar tech4you/energy_optimization_service:0.0.3
 
 docker image load --input energy_optimization_service.tar
-docker run -it --rm -d -p 8883:5000 tech4you/energy_optimization_service:0.0.1
+docker run -it --rm -d -p 8883:5000 tech4you/energy_optimization_service:0.0.3 -v /home/docker-containers/volumes/energy_optimization_service:/app/serviceOutput

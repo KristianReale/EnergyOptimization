@@ -298,7 +298,7 @@ def recommend(building, date, time, init_charge_percentage, production_current, 
     return {"date": date, "time": time, "recommendation": results}
 
 
-def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, production, consumption, time_limit, isSchedule = False,
+def calculate_best_grid_transfer(building, date, init_charge_percentage, state_of_charge_min_percentage, state_of_charge_max_percentage, unit, production, consumption, time_limit, isSchedule = False,
                                  more_program = None, clingoLP = False):
     if time_limit is None:
         time_limit = 100000
@@ -315,7 +315,8 @@ def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, p
     print("Building: " + config["default"][buildingName])
     paramFileName = config["default"][buildingName]
 
-
+    minSocFile = None
+    maxSocFile = None
     with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as tmp:
         print(tmp.name)
         factsFile = tmp.name
@@ -324,6 +325,26 @@ def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, p
                 tmp.write(f"vE_SinitPercentage({init_charge_percentage}).\n")
             else:
                 tmp.write(f"vE_SinitPercentage({init_charge_percentage * 100:.00f}).\n")
+        if state_of_charge_min_percentage is not None:
+            if clingoLP:
+                tmp.write(f"vE_SminPercentage({state_of_charge_min_percentage}).\n")
+            else:
+                tmp.write(f"vE_SminPercentage({state_of_charge_min_percentage * 100:.00f}).\n")
+        else:
+            if clingoLP:
+                minSocFile = ASP_PARAMS_PATH_CLINGOLP + "limit_min_SOC_" + paramFileName
+            else:
+                minSocFile = ASP_PARAMS_PATH + "limit_min_SOC_" + paramFileName
+        if state_of_charge_max_percentage is not None:
+            if clingoLP:
+                tmp.write(f"vE_SmaxPercentage({state_of_charge_max_percentage}).\n")
+            else:
+                tmp.write(f"vE_SmaxPercentage({state_of_charge_max_percentage * 100:.00f}).\n")
+        else:
+            if clingoLP:
+                maxSocFile = ASP_PARAMS_PATH_CLINGOLP + "limit_max_SOC_" + paramFileName
+            else:
+                maxSocFile = ASP_PARAMS_PATH + "limit_max_SOC_" + paramFileName
         if unit == "kWh":
             counterTime = 1
             for prod in production:
@@ -352,16 +373,32 @@ def calculate_best_grid_transfer(building, date, init_charge_percentage, unit, p
     #command = ["clingo", ASP_PROGRAM_PATH, factsFile, ASP_PARAMS_PATH, ASP_MAXCHARGE_PATH, "--quiet=1", "--outf=1",
     #           f"--time-limit={time_limit}"]
     command = ["clingo", ASP_PROGRAM_PATH, factsFile, ASP_PARAMS_PATH + paramFileName,
-               ASP_PARAMS_PATH + "max_charge_" + paramFileName, "--quiet=1", "--outf=1",
+               ASP_PARAMS_PATH + "max_charge_" + paramFileName, minSocFile, maxSocFile, "--quiet=1", "--outf=1",
                f"--time-limit={time_limit}"]
     if clingoLP:
-        command = ["clingoLP", ASP_PROGRAM_PATH_CLINGOLP, factsFile, ASP_PARAMS_PATH_CLINGOLP + paramFileName,
-                   ASP_PARAMS_PATH + "max_charge_" + paramFileName, "--quiet=1", "--outf=1",
+        if minSocFile is not None and maxSocFile is not None:
+            command = ["clingoLP", ASP_PROGRAM_PATH_CLINGOLP, factsFile, ASP_PARAMS_PATH_CLINGOLP + paramFileName,
+                   ASP_PARAMS_PATH_CLINGOLP + "max_charge_" + paramFileName, minSocFile, maxSocFile, "--quiet=1", "--outf=1",
                    f"--time-limit={time_limit}", "--show-lp-solution"]
+        elif minSocFile is not None:
+            command = ["clingoLP", ASP_PROGRAM_PATH_CLINGOLP, factsFile, ASP_PARAMS_PATH_CLINGOLP + paramFileName,
+                       ASP_PARAMS_PATH_CLINGOLP + "max_charge_" + paramFileName, minSocFile, "--quiet=1",
+                       "--outf=1",
+                       f"--time-limit={time_limit}", "--show-lp-solution"]
+        elif maxSocFile is not None:
+            command = ["clingoLP", ASP_PROGRAM_PATH_CLINGOLP, factsFile, ASP_PARAMS_PATH_CLINGOLP + paramFileName,
+                       ASP_PARAMS_PATH_CLINGOLP + "max_charge_" + paramFileName, maxSocFile, "--quiet=1",
+                       "--outf=1",
+                       f"--time-limit={time_limit}", "--show-lp-solution"]
+        else:
+            command = ["clingoLP", ASP_PROGRAM_PATH_CLINGOLP, factsFile, ASP_PARAMS_PATH_CLINGOLP + paramFileName,
+                       ASP_PARAMS_PATH_CLINGOLP + "max_charge_" + paramFileName, "--quiet=1",
+                       "--outf=1",
+                       f"--time-limit={time_limit}", "--show-lp-solution"]
     print(*command)
     if not isSchedule:
         response = subprocess.run(command, capture_output=True, text=True)
-        #print(response.stdout)
+        print(response.stdout)
         return asp_to_json(response.stdout, clingoLP=clingoLP)
     else:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

@@ -1,6 +1,4 @@
 vGUESSMAX(18).
-vE_SminPercentage(5). % 5%
-vE_SmaxPercentage(100). % 100%
 vDischargeMinPercentage(0).
 %vDischargeMaxPercentage(10000).
 vChargeMinPercentage(0).

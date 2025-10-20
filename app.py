@@ -122,8 +122,14 @@ class BestGridTransferFromInput(Resource):
         building = data["building"]
         date = data["date"]
         init_charge_percentage = 100
+        state_of_charge_min_percentage = None
+        state_of_charge_max_percentage = None
         if "init_charge_percentage" in data:
             init_charge_percentage = data["init_charge_percentage"]
+        if "state_of_charge_min_percentage" in data:
+            state_of_charge_min_percentage = data["state_of_charge_min_percentage"]
+        if "state_of_charge_max_percentage" in data:
+            state_of_charge_max_percentage = data["state_of_charge_max_percentage"]
 
         production = data["production"]
         consumption = data["consumption"]
@@ -136,11 +142,53 @@ class BestGridTransferFromInput(Resource):
 
         #return json.dumps(calculate_best_grid_transfer(building, date, init_charge_percentage,
         #                                               "kWh", production, consumption, time_execution_limit_secs))
-        return calculate_best_grid_transfer(building, date, init_charge_percentage,
-                                                       "kWh", production, consumption, time_execution_limit_secs, isSchedule, clingoLP = True)
+        return calculate_best_grid_transfer(building, date, init_charge_percentage, state_of_charge_min_percentage=state_of_charge_min_percentage, state_of_charge_max_percentage=state_of_charge_max_percentage,
+                                                       unit="kWh", production=production, consumption=consumption, time_limit=time_execution_limit_secs, isSchedule=isSchedule, clingoLP = True)
+
+
+@ns.route('/best_grid_transfer_deprecated')
+class BestGridTransferFromInput_deprecated(Resource):
+    @ns.expect(best_grid_transfer_model)
+    @ns.response(200, 'Successful Response', 'ResponseOneOf')
+    def post(self):
+        data = ns.payload
+        building = data["building"]
+        date = data["date"]
+        init_charge_percentage = 100
+        state_of_charge_min_percentage = None
+        state_of_charge_max_percentage = None
+        if "init_charge_percentage" in data:
+            init_charge_percentage = data["init_charge_percentage"]
+        if "state_of_charge_min_percentage" in data:
+            state_of_charge_min_percentage = data["state_of_charge_min_percentage"]
+        if "state_of_charge_max_percentage" in data:
+            state_of_charge_max_percentage = data["state_of_charge_max_percentage"]
+
+        production = data["production"]
+        consumption = data["consumption"]
+        time_execution_limit_secs = 1200
+        if "time_execution_limit_secs" in data:
+            time_execution_limit_secs = data["time_execution_limit_secs"]
+        #isSchedule = False
+        #if "schedule" in data:
+        #    isSchedule = bool(data["schedule"])
+
+        #return json.dumps(calculate_best_grid_transfer(building, date, init_charge_percentage,
+        #                                               "kWh", production, consumption, time_execution_limit_secs))
+        return calculate_best_grid_transfer(building, date, init_charge_percentage, state_of_charge_min_percentage, state_of_charge_max_percentage,
+                                                       "kWh", production, consumption, time_execution_limit_secs, isSchedule = False, clingoLP = True)
 
 @ns.route('/get_best_grid_transfer')
 class GetBestGridTransfer(Resource):
+    @ns.expect(get_best_grid_transfer_model)
+    @ns.response(200, 'Successful Response', 'best_grid_transfer_output_data')
+    def post(self):
+        data = ns.payload
+        execution_id = data["execution_id"]
+        return get_results_from_id(execution_id, clingoLP=True)
+
+@ns.route('/get_best_grid_transfer_deprecated')
+class GetBestGridTransferDeprecated(Resource):
     @ns.expect(get_best_grid_transfer_model)
     @ns.response(200, 'Successful Response', 'best_grid_transfer_output_data')
     def post(self):

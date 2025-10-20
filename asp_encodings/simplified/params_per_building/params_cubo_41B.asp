@@ -1,6 +1,4 @@
 vGUESS(0..1600).
-vE_SminPercentage(500). % 5%
-vE_SmaxPercentage(10000). % 100%
 vDischargeMinPercentage(0).
 %vDischargeMaxPercentage(10000).
 vChargeMinPercentage(0).
