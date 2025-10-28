@@ -64,7 +64,7 @@ def group_data(input_file, minute_granularity=60): #per media
             #    chargeInitValue = float(state_of_charge)
     return hourly_data
 
-def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP, unit ="W", what="real"):
+def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP, unit ="W", what="real", noRound=False):
     hourly_data = group_data(input_file, minute_granularity)
 
     '''for (date, hour), values in hourly_data.items():
@@ -92,35 +92,40 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
 
         #date, true_cons, dLinear, TimesNet, true_prod, prod
         true_cons = values['true_cons'][0]
-        if unit == "KWh":
-            true_cons = true_cons #/ 1000
-            true_cons = round(true_cons, 2)
-        else:
-            true_cons = round(true_cons, 1)
+        if not noRound:
+            if unit == "KWh":
+                true_cons = true_cons #/ 1000
+                true_cons = round(true_cons, 2)
+            else:
+                true_cons = round(true_cons, 1)
         dLinear = values['dLinear'][0]
-        if unit == "KWh":
-            dLinear = dLinear #/ 1000
-            dLinear = round(dLinear, 2)
-        else:
-            dLinear = round(dLinear, 1)
+        if not noRound:
+            if unit == "KWh":
+                dLinear = dLinear #/ 1000
+                dLinear = round(dLinear, 2)
+            else:
+                dLinear = round(dLinear, 1)
         TimesNet = values['TimesNet'][0]
-        if unit == "KWh":
-            TimesNet = TimesNet #/ 1000
-            TimesNet = round(TimesNet, 2)
-        else:
-            TimesNet = round(TimesNet, 1)
+        if not noRound:
+            if unit == "KWh":
+                TimesNet = TimesNet #/ 1000
+                TimesNet = round(TimesNet, 2)
+            else:
+                TimesNet = round(TimesNet, 1)
         true_prod = values['true_prod'][0]
-        if unit == "KWh":
-            true_prod = true_prod #/ 1000
-            true_prod = round(true_prod, 2)
-        else:
-            true_prod = round(true_prod, 1)
+        if not noRound:
+            if unit == "KWh":
+                true_prod = true_prod #/ 1000
+                true_prod = round(true_prod, 2)
+            else:
+                true_prod = round(true_prod, 1)
         prod = values['prod'][0]
-        if unit == "KWh":
-            prod = prod #/ 1000
-            prod = round(prod, 2)
-        else:
-            prod = round(prod, 1)
+        if not noRound:
+            if unit == "KWh":
+                prod = prod #/ 1000
+                prod = round(prod, 2)
+            else:
+                prod = round(prod, 1)
         production = 0
         consumption = 0
         if what == "dlinear-predprod":
@@ -154,17 +159,32 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                     #    f"vE_SinitPercentage({round(state_of_charge)}).\n"
                     #)
                     initChargeStr = f"vE_SinitPercentage({round(state_of_charge)}).\n"
-            if unit == "KWh":
-                stringToWrite += (
-                    f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"                    
-                    f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 100:.00f}).\n"
-                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 100:.00f}).\n"
-                )
+            if not noRound:
+                if unit == "KWh":
+                    stringToWrite += (
+                        f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"                    
+                        f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 100:.00f}).\n"
+                        f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 100:.00f}).\n"
+                    )
+                else:
+                    stringToWrite += (
+                        f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"
+                        f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 10:.0f}).\n"
+                        f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10:.0f}).\n"
+                    )
             else:
+                strPositive = ""
+                diff = 0
+                diff = production - consumption
+                if production >= consumption:
+                    strPositive = "positive"
+                else:
+                    strPositive = "negative"
                 stringToWrite += (
                     f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"
-                    f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",{production * 10:.0f}).\n"
-                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10:.0f}).\n"
+                    f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",\"{production}\").\n"
+                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",\"{consumption}\").\n"
+                    f"diffPV_L(\"{date}\",\"{time}:{minutes_seconds}\", \"{diff}\", {strPositive}).\n"
                 )
         elif format == FORMAT.CSV:
             stringToWrite += f"{date} {time}:{minutes_seconds},{production},{consumption}\n"
@@ -210,7 +230,7 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
         with open(output_dir + "/" + str(key) + "_" + unit + extension, 'w') as outfile:
             if header is not None:
                 outfile.write(header)
-            outfile.write(json.dumps(outputParts[key]))
+            outfile.write(outputParts[key])
 
 
 def asp_to_cvs(input_file, output_file, unit ="W"):
@@ -242,15 +262,15 @@ def csv_to_json(file):
 
 def generate_final_excel(clingcon = False):
     resultsFolder = os.path.dirname(os.path.abspath(__file__)) + f"/ResultsClingcon"
-    house_list = [f for f in os.listdir(resultsFolder) if os.path.isdir(os.path.join(resultsFolder, f)) and f not in ["pythonData"]]
+    house_list = [f for f in os.listdir(resultsFolder) if os.path.isdir(os.path.join(resultsFolder, f)) and f not in ["pythonData"] and not f.endswith("_finalResults.txt")]
 
     for house in house_list:
-        nextInitCharge = 36
+        nextInitCharge = 10000
         excel_file = resultsFolder + f"/{house}/analysis_{house}.xlsx"
         wb = Workbook()
         wb.remove(wb.active)
-        file_list = sorted([f for f in os.listdir(os.path.dirname(os.path.abspath(__file__)) + f"/ResultsClingcon/{house}") if f.startswith("output") and not f.endswith("finalCharge.asp")])
-        maxCharge = 36
+        file_list = sorted([f for f in os.listdir(os.path.dirname(os.path.abspath(__file__)) + f"/ResultsClingcon/{house}") if f.startswith("output") and not f.endswith("_finalCharge.txt")])
+        maxCharge = 10000
         for file in file_list:
             date_file = re.search(r'(\d{4}-\d{2}-\d{2})', file).group(1)
             input_file_asp = os.path.dirname(
@@ -266,12 +286,12 @@ def generate_final_excel(clingcon = False):
                 ws1['A1'] = "Original Dataset"
                 ws1['D1'] = "Analysis: " + house
                 ws1['A2'] = "date"
-                ws1['B2'] = "Discharge(KW)"
-                ws1['C2'] = "Charge(KW)"
-                ws1['D2'] = "Production(KW)"
-                ws1['E2'] = "Consumption(KW)"
-                ws1['F2'] = "Feed-in(KW)"
-                ws1['G2'] = "From grid(KW)"
+                ws1['B2'] = "Discharge(W)"
+                ws1['C2'] = "Charge(W)"
+                ws1['D2'] = "Production(W)"
+                ws1['E2'] = "Consumption(W)"
+                ws1['F2'] = "Feed-in(W)"
+                ws1['G2'] = "From grid(W)"
                 ws1['H2'] = "State of Charge (%)"
                 ws1['I2'] = "State of Charge (Value)"
 
@@ -295,10 +315,17 @@ def generate_final_excel(clingcon = False):
                     i+=1
 
             with open(input_file_asp, 'r') as in_f:
+                optimality = None
                 lastString = in_f.read().split("Answer:")[-1]
-                isOptimum = "OPTIMUM" in lastString
-                numAns = lastString.split("%")[0]
-                results = best_grid_transfer_results_parse(lastString, "kWh", decimal_digits=0, clingcon=clingcon)
+                if clingcon:
+                    match = re.search(r"LP solution:\s*(.*)", lastString, re.DOTALL)
+                    if match:
+                        value = match.group(1).strip().split("\n")[0]
+                        optimality = value
+                else:
+                    optimality = "OPTIMUM" in lastString
+                numAns = lastString.split("%")[0].split("\n")[0]
+                results = best_grid_transfer_results_parse(lastString, "kWh", decimal_digits=0, clingoLP=clingcon)
                 print(results)
                 solving_time = "NA"
 
@@ -316,24 +343,25 @@ def generate_final_excel(clingcon = False):
 
                 #ws1.title = date_file
                 optStr = "NOT KNOWN"
-                if isOptimum:
-                    optStr = "YES"
-                ws1['V6'] = "Is Optimal: "
+                if optimality is not None:
+                    optStr = optimality
+
+                ws1['V6'] = "Optimality: "
                 ws1['W6'] = optStr
-                ws1['V7'] = "Last Answer Set Number: "
+                ws1['V7'] = "Answer Set Number: "
                 ws1['W7'] = numAns
-                ws1['V8'] = "Time Last Answer (seconds): "
+                ws1['V8'] = "Time (seconds): "
                 ws1['W8'] = solving_time
-                ws1['V9'] = "Time Last Answer (minutes): "
+                ws1['V9'] = "Time (minutes): "
                 ws1['W9'] = "=W8/60"
                 ws1['L1'] = "ASP Solution"
                 ws1['L2'] = "date"
-                ws1['M2'] = "Discharge(KW)"
-                ws1['N2'] = "Charge(KW)"
-                ws1['O2'] = "Production(KW)"
-                ws1['P2'] = "Consumption(KW)"
-                ws1['Q2'] = "Feed-in(KW)"
-                ws1['R2'] = "From grid(KW)"
+                ws1['M2'] = "Discharge(W)"
+                ws1['N2'] = "Charge(W)"
+                ws1['O2'] = "Production(W)"
+                ws1['P2'] = "Consumption(W)"
+                ws1['Q2'] = "Feed-in(W)"
+                ws1['R2'] = "From grid(W)"
                 ws1['S2'] = "State of Charge (%)"
                 ws1['T2'] = "State of Charge (Value)"
 
@@ -357,13 +385,13 @@ def generate_final_excel(clingcon = False):
                         ws1['U1'] = "Max Charge:"
                         ws1['V1'] = maxCharge
                         ws1['W1'] = "Minimum storage Level"
-                        ws1['X1'] = 0.1
+                        ws1['X1'] = 0.2
                         ws1['X1'].number_format = '0.00%'
                         ws1['W2'] = "Maximum storage Level"
                         ws1['X2'] = 1
                         ws1['X2'].number_format = '0.00%'
-                        ws1['W3'] = "Maximum Power (both Charge and Discharge)"
-                        ws1['X3'] = "18kWh"
+                        #ws1['W3'] = "Maximum Power (both Charge and Discharge)"
+                        #ws1['X3'] = "18kWh"
 
 
                     ws1[f"L{i}"] = date
@@ -389,16 +417,24 @@ def generate_final_excel(clingcon = False):
             ws1['S1'] = float(nextInitCharge) / maxCharge
             ws1['S1'].number_format = '0.00%'
             # ws1['T1'] = ws1['S1'].value * 36
-            ws1['T1'] = float(nextInitCharge)
+            #ws1['T1'] = float(nextInitCharge)
+            ws1['T1'] = "=S1*V1"
 
-            if not clingcon:
-                finalChargeFileName = input_file_asp.rsplit(".", 1)[0] + "_finalCharge.asp"
-                #print("AAA " + finalChargeFileName)
-                with open(finalChargeFileName, 'r') as in_fCharge:
+            finalChargeFileName = input_file_asp.rsplit(".", 1)[0] + "_finalCharge.txt"
+            #print("AAA " + finalChargeFileName)
+            with open(finalChargeFileName, 'r') as in_fCharge:
+                pattern_initCharge = None
+                if clingcon:
+                    result = in_fCharge.read()
+                    pattern_initCharge = r'vE_Sinit\((.*?)\)'
+                else:
                     result = in_fCharge.read().split("ANSWER")[-1]
-                    pattern_initCharge = r'vFinalCharge\((.*?)\)'  # Adatta se il formato cambia
-                    matches_initCharge = re.findall(pattern_initCharge, result)
-                    for match in matches_initCharge:
+                    pattern_initCharge = r'vFinalCharge\((.*?)\)'
+                matches_initCharge = re.findall(pattern_initCharge, result)
+                for match in matches_initCharge:
+                    if clingcon:
+                        nextInitCharge = float(match.replace("\"", ""))
+                    else:
                         nextInitCharge = float(match) / 100
 
         wb.save(excel_file)

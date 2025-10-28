@@ -453,15 +453,21 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=0, clingoL
     #result = "{vP_L(1,1,0), vP_L(1,2,0), vP_L(1,3,0), vP_L(1,4,0), vP_L(1,5,0), vP_L(1,6,0), vP_L(1,7,0), vP_L(1,8,0), vP_L(1,9,0), vP_L(1,10,0), vP_L(1,11,0), vP_L(1,12,0), vP_L(1,13,0), vP_L(1,14,0), vP_L(1,15,0), vP_L(1,16,0), vP_L(1,17,0), vP_L(1,18,0), vP_L(1,19,0), vP_L(1,20,0), vP_L(1,21,0), vP_L(1,22,0), vP_L(1,23,0), vP_S(1,1,999), vP_S(1,2,999), vP_S(1,3,999), vP_S(1,4,999), vP_S(1,5,999), vP_S(1,6,999), vP_S(1,7,999), vP_S(1,8,999), vP_S(1,9,999), vP_S(1,10,999), vP_S(1,11,999), vP_S(1,12,999), vP_S(1,13,999), vP_S(1,14,999), vP_S(1,15,999), vP_S(1,16,999), vP_S(1,17,999), vP_S(1,18,999), vP_S(1,19,999), vP_S(1,20,999), vP_S(1,21,999), vP_S(1,22,999), vP_S(1,23,999), vP_PV(1,1,998), vP_PV(1,2,998), vP_PV(1,3,998), vP_PV(1,4,998), vP_PV(1,5,998), vP_PV(1,6,998), vP_PV(1,7,998), vP_PV(1,8,998), vP_PV(1,9,998), vP_PV(1,10,998), vP_PV(1,11,998), vP_PV(1,12,998), vP_PV(1,13,998), vP_PV(1,14,998), vP_PV(1,15,998), vP_PV(1,16,998), vP_PV(1,17,998), vP_PV(1,18,998), vP_PV(1,19,998), vP_PV(1,20,998), vP_PV(1,21,998), vP_PV(1,22,998), vP_PV(1,23,998)} COST 11442569@1"
     #print(result)
 
+    pattern_vE_Sinit = r'vE_Sinit\((.*?)\)'  # Adatta se il formato cambia
+    pattern_maxCharge = r'maxChargeKWh\((.*?)\)'  # Adatta se il formato cambia
     pattern_vP_L = r'vP_L\((.*?)\)'  # Adatta se il formato cambia
     pattern_vP_PV = r'vP_PV\((.*?)\)'  # Adatta se il formato cambia
     pattern_vP_S = r'vP_S\((.*?)\)'  # Adatta se il formato cambia
+ #   pattern_xP_S = r'xP_S\("([^"]+)",\s*([\d.]+),\s*"([^"]+)",\s*"([-+]?\d+(?:\.\d+)?)"\)'
+
     pattern_xP_S = r'xP_S\("([^"]+)",\s*([\d.]+),\s*"([^"]+)"\)\s*=\s*([-+]?\d+(?:\.\d+)?)'  # Adatta se il formato cambia
     pattern_charge = r'vCharge\((.*?)\)'  # Adatta se il formato cambia
     pattern_discharge = r'vDischarge\((.*?)\)'  # Adatta se il formato cambia
     pattern_feed_in = r'vFeed_in\((.*?)\)'  # Adatta se il formato cambia
     pattern_from_grid = r'vFrom_grid\((.*?)\)'  # Adatta se il formato cambia
-    
+
+    matches_maxCharge = re.findall(pattern_maxCharge, result)
+    matches_vE_Sinit = re.findall(pattern_vE_Sinit, result)
     matches_vP_L = re.findall(pattern_vP_L, result)
     matches_vP_PV = re.findall(pattern_vP_PV, result)
     matches_vP_S = re.findall(pattern_vP_S, result)
@@ -475,6 +481,14 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=0, clingoL
     decimalDigitDivide = 1
     for i in range(0, decimal_digits):
         decimalDigitDivide *=10
+
+    initCharge = 0
+    for match in matches_vE_Sinit:
+        initCharge = float(match.strip('"'))
+
+    maxCharge = 0
+    for match in matches_maxCharge:
+        maxCharge = float(match)
 
     for match in matches_vP_L:
         # Suddividere il contenuto in massimo 3 parti
@@ -521,8 +535,9 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=0, clingoL
             date = valori[0].replace('"', '')
             time = valori[1].replace('"', '')
             value = float(valori[2].replace('"', ''))'''
+        print(result)
         for match in matches_xP_S:
-            print("yes")
+            #print("yes")
             date, timeI, time, value = match
             value = float(value.replace("\"", ""))
 
@@ -544,7 +559,7 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=0, clingoL
             feed_in = float(0)
             if PV_value > PL_value and value >= 0:
                 feed_in = PV_value - PL_value - value
-                epsilon = 1e-6  # soglia di tolleranza
+                epsilon = 1e-3  # soglia di tolleranza
                 if abs(feed_in) < epsilon:
                     feed_in = 0.0
             feed_in_results.append({"day": date, "time": time, "value": feed_in})
@@ -555,7 +570,7 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=0, clingoL
             from_grid = float(0)
             if PL_value > PV_value and value <= 0:
                 from_grid = PL_value - PV_value + value
-                epsilon = 1e-6  # soglia di tolleranza
+                epsilon = 1e-3 # soglia di tolleranza
                 if abs(from_grid) < epsilon:
                     from_grid = 0.0
             from_grid_results.append({"day": date, "time": time, "value": from_grid})
@@ -643,8 +658,18 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=0, clingoL
     discharge_results = sorted(discharge_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
     feed_in_results = sorted(feed_in_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
     from_grid_results = sorted(from_grid_results, key=lambda k: (k["day"], datetime.strptime(k["time"].replace("24:00:00", "23:59:59"), "%H:%M:%S")))
+
+    finalChargeValue = initCharge
+    for item in charge_results:
+        #for key, value in item.items():
+        finalChargeValue += float(item["value"])
+
+    for item in discharge_results:
+        finalChargeValue -= float(item["value"])
+
     object_result = {"P_L": vP_L_results, "P_PV": vP_PV_results,  "Charge": charge_results,
-                     "Discharge": discharge_results, "Feed-in" : feed_in_results, "From grid": from_grid_results}
+                     "Discharge": discharge_results, "Feed-in" : feed_in_results, "From grid": from_grid_results,
+                     "final_charge": finalChargeValue}#, "final_charge_percentage": (finalChargeValue / maxCharge * 100)}
     #print(object_result)
     return object_result
 
@@ -663,6 +688,7 @@ def asp_to_json(solver_results, unit="kWh", clingoLP = False):
     toReturn["consumption"] = []
     toReturn["feed_in"] = []
     toReturn["from_grid"] = []
+    toReturn["final_charge_percentage"] = results["final_charge_percentage"]
     for cont in range(len(results["P_L"])):
         date = results["P_L"][cont]["day"].replace("\"", "")
         toReturn["date"] = date

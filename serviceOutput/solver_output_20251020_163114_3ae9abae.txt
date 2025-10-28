@@ -1,0 +1,2 @@
+*** ERROR: (clingoLP): 'limit_min_SOC_params_cubo_18B.asp': could not open input file!
+*** Info : (clingoLP): Try '--help' for usage information
