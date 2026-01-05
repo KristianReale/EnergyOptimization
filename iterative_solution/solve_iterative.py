@@ -3,19 +3,30 @@ import numpy as np
 
 # === 1️⃣ Carica il dataset ===
 # Sostituisci "file.xlsx" con il nome del tuo file Excel
-df = pd.read_excel("analysis_H1_15_min.xlsx")
-maxCharge = 10000
-initChargePercentage = 100
+df = pd.read_excel("analysis_picco.xlsx")
+
+import time
+
+start = time.time()  # tempo iniziale
+
+maxCharge = 100
+minCharge = 20
+initChargePercentage = 60
+maxDischargeTimes = 9
+countDischargeTimes = 0
 
 # === 2️⃣ Assicurati che la colonna 'date' sia di tipo datetime ===
 df['date'] = pd.to_datetime(df['date'])
 df["MaxCharge"] = None
 df[maxCharge] = None
+df["MinCharge"] = None
+df[minCharge] = None
 df["InitChargePercentage"] = None
 df[initChargePercentage] = None
 
 # === 3️⃣ Itera sulle righe e calcola i valori mancanti ===
 soc_value = maxCharge * initChargePercentage / 100
+print(soc_value)
 for i in range(len(df)):
     row = df.loc[i]
 
@@ -38,9 +49,13 @@ for i in range(len(df)):
     from_grid = 0
 
     if production < consumption:
-        discharge = consumption - production
-        if discharge > soc_value:
-            discharge = soc_value
+        discharge = 0
+        if countDischargeTimes < maxDischargeTimes:
+            countDischargeTimes += 1
+
+            discharge = consumption - production
+            if soc_value - discharge < minCharge:
+                discharge = soc_value - minCharge
         from_grid = consumption - production - discharge
     else:
         charge = production - consumption
@@ -63,6 +78,8 @@ for i in range(len(df)):
 
 
 # === 6️⃣ (Facoltativo) Salva il risultato ===
-df.to_excel("file_completato.xlsx", index=False)
+df.to_excel("file_completato_greedy.xlsx", index=False)
+end = time.time()  # tempo finale
 
+print("Tempo di esecuzione:", end - start, "secondi")
 print("Calcolo dei valori mancanti completato.")

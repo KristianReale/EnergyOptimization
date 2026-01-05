@@ -265,21 +265,25 @@ def generate_final_excel(clingcon = False):
     house_list = [f for f in os.listdir(resultsFolder) if os.path.isdir(os.path.join(resultsFolder, f)) and f not in ["pythonData"] and not f.endswith("_finalResults.txt")]
 
     for house in house_list:
-        nextInitCharge = 10000
+        nextInitCharge = 80
         excel_file = resultsFolder + f"/{house}/analysis_{house}.xlsx"
         wb = Workbook()
         wb.remove(wb.active)
         file_list = sorted([f for f in os.listdir(os.path.dirname(os.path.abspath(__file__)) + f"/ResultsClingcon/{house}") if f.startswith("output") and not f.endswith("_finalCharge.txt")])
-        maxCharge = 10000
+        maxCharge = 100
         for file in file_list:
             date_file = re.search(r'(\d{4}-\d{2}-\d{2})', file).group(1)
             input_file_asp = os.path.dirname(
                 os.path.abspath(__file__)) + "/ResultsClingcon" + f"/{house}/{file}"
-            input_file_csv = os.path.dirname(
-                os.path.abspath(__file__)) + "/Input" + f"/{house}/csv/{date_file}_KWh.csv"
+            if house == "irlanda":
+                input_file_csv = os.path.dirname(
+                    os.path.abspath(__file__)) + "/Input" + f"/{house}/csv/{date_file}.csv"
+            else:
+                input_file_csv = os.path.dirname(
+                    os.path.abspath(__file__)) + "/Input" + f"/{house}/csv/{date_file}_KWh.csv"
 
             ws1 = wb.create_sheet(title=date_file)
-            init_state_of_charge = 36
+            init_state_of_charge = 80
             with open(input_file_csv, 'r') as csvfile:
                 reader = csv.reader(csvfile)
                 header = next(reader)  # Legge l'intestazione
@@ -298,8 +302,10 @@ def generate_final_excel(clingcon = False):
                 i = 3
                 for row in reader:
                     #print(row)
-                    #date, discharge, charge, production, consumption, feed_in, from_grid, state_of_charge = row
-                    date, production, consumption = row
+                    if house == "irlanda":
+                        date, discharge, charge, production, consumption, feed_in, from_grid, state_of_charge = row
+                    else:
+                        date, production, consumption = row
                     #if i == 3:
                     #    init_state_of_charge = state_of_charge
                     ws1[f"A{i}"] = date
@@ -381,11 +387,12 @@ def generate_final_excel(clingcon = False):
                         #ws1['S1'] = 100
                         ws1['S1'].number_format = '0.00%'
                         #ws1['T1'] = ws1['S1'].value * 36
-                        ws1['T1'] = init_state_of_charge
+                        ws1['T1'] = "=S1*V1"
+                        #ws1['T1'] = init_state_of_charge
                         ws1['U1'] = "Max Charge:"
                         ws1['V1'] = maxCharge
                         ws1['W1'] = "Minimum storage Level"
-                        ws1['X1'] = 0.2
+                        ws1['X1'] = 0.1
                         ws1['X1'].number_format = '0.00%'
                         ws1['W2'] = "Maximum storage Level"
                         ws1['X2'] = 1
