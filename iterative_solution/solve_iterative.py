@@ -1,85 +1,134 @@
 import pandas as pd
 import numpy as np
 
-# === 1️⃣ Carica il dataset ===
-# Sostituisci "file.xlsx" con il nome del tuo file Excel
-df = pd.read_excel("analysis_picco.xlsx")
 
 import time
+import os
+import csv
 
-start = time.time()  # tempo iniziale
+from openpyxl import load_workbook
 
-maxCharge = 100
-minCharge = 20
-initChargePercentage = 60
-maxDischargeTimes = 9
-countDischargeTimes = 0
+inputFolder = "./csv/"
+outputFolder = "../../Results/nuovi_dati/greedy/"
 
-# === 2️⃣ Assicurati che la colonna 'date' sia di tipo datetime ===
-df['date'] = pd.to_datetime(df['date'])
-df["MaxCharge"] = None
-df[maxCharge] = None
-df["MinCharge"] = None
-df[minCharge] = None
-df["InitChargePercentage"] = None
-df[initChargePercentage] = None
+file_list = [f for f in os.listdir(inputFolder) if
+                  f.endswith(
+                      ".csv")]
+for fIn in file_list:
 
-# === 3️⃣ Itera sulle righe e calcola i valori mancanti ===
-soc_value = maxCharge * initChargePercentage / 100
-print(soc_value)
-for i in range(len(df)):
-    row = df.loc[i]
+    #df = pd.read_excel(inputFolder + fIn)
 
-    # Esempio: ottieni i valori noti della riga
-    date = row['date']
-    discharge = row['Discharge(KW)']
-    charge = row['Charge(KW)']
-    production = row['Production(KW)']
-    consumption = row['Consumption(KW)']
-    feed_in = row['Feed-in(KW)']
-    from_grid = row['From grid(KW)']
-    soc_percent = row['State of Charge (%)']
+    start = time.time()  # tempo iniziale
+
+    maxCharge = 100
+    minCharge = 20
+    initChargePercentage = 60
+    maxDischargeTimes = 25
+    countDischargeTimes = 0
+
+    # === 2️⃣ Assicurati che la colonna 'date' sia di tipo datetime ===
+    '''df['date'] = pd.to_datetime(df['date'])
+    df["MaxCharge"] = None
+    df[maxCharge] = None
+    df["MinCharge"] = None
+    df[minCharge] = None
+    df["InitChargePercentage"] = None
+    df[initChargePercentage] = None'''
+
+    # === 3️⃣ Itera sulle righe e calcola i valori mancanti ===
+    soc_value = maxCharge * initChargePercentage / 100
+    #print(soc_value)
+    with open(inputFolder + fIn, 'r') as csvfile:
+        reader = csv.reader(csvfile)
+        header = next(reader)  # Legge l'intestazione
+        counterRow = 0
+        dates = []
+        productions = []
+        consumptions = []
+        discharges = []
+        charges = []
+        feed_ins = []
+        from_grids = []
+        soc_percents = []
+        soc_values = []
+        for row in reader:
+            date, production, consumption = row
+            production = float(production)
+            consumption = float(consumption)
+            # Esempio: ottieni i valori noti della riga
+            '''
+            date = row['date']
+            discharge = row['Discharge(KW)']
+            charge = row['Charge(KW)']
+            production = row['Production(KW)']
+            consumption = row['Consumption(KW)']
+            feed_in = row['Feed-in(KW)']
+            from_grid = row['From grid(KW)']
+            soc_percent = row['State of Charge (%)']
+            '''
+
+            # === 4️⃣ Se un valore è mancante (NaN), calcolalo con la tua formula ===
+
+            discharge = 0
+            charge = 0
+            feed_in = 0
+            from_grid = 0
+
+            if production < consumption:
+                discharge = consumption - production
+                if soc_value - discharge < minCharge:
+                    discharge = soc_value - minCharge
+                if discharge > 0:
+                    if countDischargeTimes <    maxDischargeTimes:
+                        countDischargeTimes += 1
+                    else:
+                        discharge = 0
+                from_grid = consumption - production - discharge
+            else:
+                charge = production - consumption
+                if charge + soc_value > maxCharge:
+                    charge = maxCharge - soc_value
+                feed_in = production - consumption - charge
+
+            soc_value = soc_value - discharge + charge
+
+            soc_percent = soc_value / maxCharge * 100
+            dates.append(date)
+            productions.append(production)
+            consumptions.append(consumption)
+            discharges.append(discharge)
+            charges.append(charge)
+            feed_ins.append(feed_in)
+            from_grids.append(from_grid)
+            soc_percents.append(soc_percent)
+            soc_values.append(soc_value)
+
+        res_df = pd.DataFrame({
+            "date": dates,
+            "Discharge(KW)" : discharges,
+            "Charge(KW)" : charges,
+            "Production(KW)" : productions,
+            "Consumption(KW)" : consumptions,
+            "Feed - in (KW)" : feed_ins,
+            "From grid(KW)" : from_grids,
+            "State of Charge(%)": soc_percents,
+            "State of Charge(Value)": soc_values
+        })
 
 
-    # === 4️⃣ Se un valore è mancante (NaN), calcolalo con la tua formula ===
+        # === 6️⃣ (Facoltativo) Salva il risultato ===
+        end = time.time()  # tempo finale
+        res_df.to_excel(f"{outputFolder}{fIn}.xlsx", index=False)
 
-    discharge = 0
-    charge = 0
-    feed_in = 0
-    from_grid = 0
+        wb = load_workbook(f"{outputFolder}{fIn}.xlsx")
+        ws = wb["Sheet1"]
+        ws["B26"] = "=SUM(B2:B25)"
+        ws["C26"] = "=SUM(C2:C25)"
+        ws["D26"] = "=SUM(D2:D25)"
+        ws["E26"] = "=SUM(E2:E25)"
+        ws["F26"] = "=SUM(F2:F25)"
+        ws["G26"] = "=SUM(G2:G25)"
+        wb.save(f"{outputFolder}{fIn}.xlsx")
 
-    if production < consumption:
-        discharge = 0
-        if countDischargeTimes < maxDischargeTimes:
-            countDischargeTimes += 1
-
-            discharge = consumption - production
-            if soc_value - discharge < minCharge:
-                discharge = soc_value - minCharge
-        from_grid = consumption - production - discharge
-    else:
-        charge = production - consumption
-        if charge + soc_value > maxCharge:
-            charge = maxCharge - soc_value
-        feed_in = production - consumption - charge
-
-    soc_value = soc_value - discharge + charge
-
-    soc_percent = soc_value / maxCharge * 100
-
-    # === 5️⃣ Aggiorna la riga nel DataFrame ===
-    df.loc[i, 'Discharge(KW)'] = discharge
-    df.loc[i, 'Charge(KW)'] = charge
-    df.loc[i, 'Feed-in(KW)'] = feed_in
-    df.loc[i, 'From grid(KW)'] = from_grid
-    df.loc[i, 'State of Charge (%)'] = soc_percent
-    df.loc[i, 'State of Charge (Value)'] = soc_value
-
-
-
-# === 6️⃣ (Facoltativo) Salva il risultato ===
-df.to_excel("file_completato_greedy.xlsx", index=False)
-end = time.time()  # tempo finale
-
-print("Tempo di esecuzione:", end - start, "secondi")
-print("Calcolo dei valori mancanti completato.")
+        print("Tempo di esecuzione:", end - start, "secondi")
+        print("Calcolo dei valori mancanti completato.")

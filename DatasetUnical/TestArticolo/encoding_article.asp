@@ -9,14 +9,17 @@ date(D) :- vP_L(D, T, P_L).
 %&sum{xP_G(D, I): time(I, T)} = v :- date(D).
 %&minimize{v}.
 
-%%&minimize {xP_S(D, I, T) : time(I, T), diffPV_L(D, T, V, negative)}.
-%%&maximize {xP_S(D, I, T) : time(I, T), date(D), diffPV_L(D, T, V, positive)}.
+&minimize {xP_S(D, I, T) : time(I, T), diffPV_L(D, T, V, negative)}.
+&maximize {xP_S(D, I, T) : time(I, T), date(D), diffPV_L(D, T, V, positive)}.
 
 %&sum{k(D,I)} <= 1 :- date(D), time(I, T).
 %&sum{xP_S(D, I, T): k(D,I) = 1} < 0 :- date(D), time(I, T).
 %a(1) :- &sum{xP_S(D, I, T)} < 0, time(I, T), diffPV_L(D, T, V, negative).
 
 %&minimize {xP_S(D, I, T) : time(I, T), use(D, T, V)}.
+
+
+
 
 
 
@@ -34,15 +37,20 @@ date(D) :- vP_L(D, T, P_L).
 %&minimize{xP_S(D, I, T)} :- prefUse(D, T), time(I, T).
 
 
-%#minimize {1@1,D,T : use(D, T) }.
+
+%%use("2023-08-26","1:00:00") use("2023-08-26","3:00:00") use("2023-08-26","5:00:00") use("2023-08-26","6:00:00") use("2023-08-26","7:00:00")
+%%use("2023-08-26","8:00:00") use("2023-08-26","19:00:00") use("2023-08-26","20:00:00") use("2023-08-26","21:00:00")
+
+#minimize {1@2, D,T : use(D, T) }.
 {use(D, T)} :- diffPV_L_int(D, T, V, negative).
-:- #count{T, D: use(D, T)} > 9.
-%&sum{xP_S(D, I, T)} < 0 :- use(D, T), time(I, T).
-%&sum{xP_S(D, I, T)} >= 0 :- not use(D, T), time(I, T), date(D).
+%:- #count{T, D: use(D, T)} > 9.
+&sum{xP_S(D, I, T)} < 0 :- use(D, T), time(I, T).
+&sum{xP_S(D, I, T)} >= 0 :- not use(D, T), time(I, T), date(D).
 
+%disOpt("119.999"). chOpt("79.999").
 
-&sum{xP_S(D, I, T): time(I, T), diffPV_L(D, T, V, negative) } <= "-119.999".
-&sum{xP_S(D, I, T): time(I, T), diffPV_L(D, T, V, positive)} >= "79.999".
+%&sum{xP_S(D, I, T): time(I, T), diffPV_L(D, T, V, negative) } <= -DIS_OPT :- disOpt(DIS_OPT).
+%&sum{xP_S(D, I, T): time(I, T), diffPV_L(D, T, V, positive)} >= CH_OPT :- chOpt(CH_OPT).
 
 %%%%&dom{0..1} = use(D, T) :- diffPV_L_int(D, T, V, negative).
 %%%%&sum{use(D, T)} <= 1 :- date(D), time(I, T).
@@ -127,6 +135,10 @@ date(D) :- vP_L(D, T, P_L).
 %% P_Smin <= PS_t_d <= P_Smax
 %&sum{-xP_S(D, I): xP_S(D, I) < 0} <= P_Smax :- date(D), time(I, T), vP_Smax(P_Smax).
 %&sum{-xP_S(D, I): xP_S(D, I) < 0} >= P_Smin :- date(D), time(I, T), vP_Smin(P_Smin).
+%%&sum{xP_S(D, I, T)} >= -P_Smax :- date(D), time(I, T), vP_Smax(P_Smax), diffPV_L(D, T, V, negative).
+%%&sum{xP_S(D, I, T)} <= P_Smax :- date(D), time(I, T), vP_Smax(P_Smax), diffPV_L(D, T, V, positive).
+%%&sum{-xP_S(D, I, T)} >= P_Smin :- date(D), time(I, T), vP_Smin(P_Smin), diffPV_L(D, T, V, negative).
+%%&sum{xP_S(D, I, T)} >= P_Smin :- date(D), time(I, T), vP_Smin(P_Smin), diffPV_L(D, T, V, positive).
 
 
 %&show {xP_S(D, I): date(D), time(I, T)}.

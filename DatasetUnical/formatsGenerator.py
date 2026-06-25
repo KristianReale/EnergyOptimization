@@ -1,3 +1,5 @@
+import math
+
 import csv
 import json
 import re
@@ -23,6 +25,7 @@ class FORMAT(Enum):
     ASP = 1
     CSV = 2
     JSON = 3
+    PYTHON = 4
 
 def group_data(input_file, minute_granularity=60): #per media
     hourly_data = defaultdict(
@@ -34,7 +37,9 @@ def group_data(input_file, minute_granularity=60): #per media
         for row in reader:
             #print(row)
             # Date,True_cons,dLinear,TimesNet,True Prod,Prod
-            date, true_cons, dLinear, TimesNet, true_prod, prod = row
+            #date, true_cons, dLinear, TimesNet, true_prod, prod = row
+            date, true_prod, prod, true_cons, dLinear, TimesNet = row
+            timestamp, pv_real, pv_predicted, load_real, load_dlinear, load_timesnet = row
             if true_cons == '' and dLinear == '' and TimesNet == '' and true_prod == '' and prod == '':
                 continue
             timestamp = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
@@ -59,6 +64,7 @@ def group_data(input_file, minute_granularity=60): #per media
             hourly_data[key]['true_prod'].append(float(true_prod))
             hourly_data[key]['prod'].append(float(prod))
 
+
             #hourly_data[hour_key]['h1_w'].append(float(h1_w))
             #if chargeInitValue == None:
             #    chargeInitValue = float(state_of_charge)
@@ -66,7 +72,6 @@ def group_data(input_file, minute_granularity=60): #per media
 
 def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP, unit ="W", what="real", noRound=False):
     hourly_data = group_data(input_file, minute_granularity)
-
     '''for (date, hour), values in hourly_data.items():
         fact_str += (
             f"discharge(\"{date}\",{hour},{sum(values['discharge']) / len(values['discharge'])*10:.0f}).\n"
@@ -83,6 +88,10 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
     counterTime = 1
     currentDate = None
     initChargeStr = None
+
+    outputPartsProductionPython = {}
+    outputPartsConsumptionPython = {}
+
     for (date, time), values in hourly_data.items():
         if currentDate == None:
             currentDate = date
@@ -97,35 +106,35 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                 true_cons = true_cons #/ 1000
                 true_cons = round(true_cons, 2)
             else:
-                true_cons = round(true_cons, 1)
+                true_cons = round(true_cons, 0) / 1000
         dLinear = values['dLinear'][0]
         if not noRound:
             if unit == "KWh":
                 dLinear = dLinear #/ 1000
                 dLinear = round(dLinear, 2)
             else:
-                dLinear = round(dLinear, 1)
+                dLinear = round(dLinear, 0) / 1000
         TimesNet = values['TimesNet'][0]
         if not noRound:
             if unit == "KWh":
                 TimesNet = TimesNet #/ 1000
                 TimesNet = round(TimesNet, 2)
             else:
-                TimesNet = round(TimesNet, 1)
+                TimesNet = round(TimesNet, 0) / 1000
         true_prod = values['true_prod'][0]
         if not noRound:
             if unit == "KWh":
                 true_prod = true_prod #/ 1000
                 true_prod = round(true_prod, 2)
             else:
-                true_prod = round(true_prod, 1)
+                true_prod = round(true_prod, 0) / 1000
         prod = values['prod'][0]
         if not noRound:
             if unit == "KWh":
                 prod = prod #/ 1000
                 prod = round(prod, 2)
             else:
-                prod = round(prod, 1)
+                prod = round(prod, 0) / 1000
         production = 0
         consumption = 0
         if what == "dlinear-predprod":
@@ -159,7 +168,7 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                     #    f"vE_SinitPercentage({round(state_of_charge)}).\n"
                     #)
                     initChargeStr = f"vE_SinitPercentage({round(state_of_charge)}).\n"
-            if not noRound:
+            '''if not noRound:
                 if unit == "KWh":
                     stringToWrite += (
                         f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"                    
@@ -173,19 +182,21 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                         f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10:.0f}).\n"
                     )
             else:
-                strPositive = ""
-                diff = 0
-                diff = production - consumption
-                if production >= consumption:
-                    strPositive = "positive"
-                else:
-                    strPositive = "negative"
-                stringToWrite += (
-                    f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"
-                    f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",\"{production}\").\n"
-                    f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",\"{consumption}\").\n"
-                    f"diffPV_L(\"{date}\",\"{time}:{minutes_seconds}\", \"{diff}\", {strPositive}).\n"
-                )
+            '''
+            strPositive = ""
+            diff = 0
+            diff = production - consumption
+            if production >= consumption:
+                strPositive = "positive"
+            else:
+                strPositive = "negative"
+            stringToWrite += (
+                f"time({counterTime}, \"{time}:{minutes_seconds}\").\n"
+                f"vP_PV(\"{date}\",\"{time}:{minutes_seconds}\",\"{production}\").\n"
+                f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",\"{consumption}\").\n"
+                f"diffPV_L(\"{date}\",\"{time}:{minutes_seconds}\", \"{diff}\", {strPositive}).\n"
+                f"diffPV_L_int(\"{date}\",\"{time}:{minutes_seconds}\", {math.floor(diff)}, {strPositive}).\n"
+            )
         elif format == FORMAT.CSV:
             stringToWrite += f"{date} {time}:{minutes_seconds},{production},{consumption}\n"
 
@@ -204,6 +215,20 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                     "time": f"{time}:{minutes_seconds}",
                     "value": consumption
                 })
+            elif format == FORMAT.PYTHON:
+                stringPythonToWriteProduction = f"{production}"
+                datetimeToWrite = f"{date} {time}:{minutes_seconds}"
+                dt = datetime.strptime(datetimeToWrite, "%Y-%m-%d %H:%M:%S")
+                datetimeToWrite = dt.strftime("%d/%m/%Y %H:%M:%S")
+
+                stringPythonToWriteConsumption = f"{datetimeToWrite},{consumption}\n"
+
+                if date not in outputPartsProductionPython:
+                    outputPartsProductionPython[date] = stringPythonToWriteProduction
+                    outputPartsConsumptionPython[date] = stringPythonToWriteConsumption
+                else:
+                    outputPartsProductionPython[date] += ", " + stringPythonToWriteProduction
+                    outputPartsConsumptionPython[date] += stringPythonToWriteConsumption
             else:
                 if date not in outputParts:
                     outputParts[date] = stringToWrite
@@ -226,11 +251,51 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
     elif format == FORMAT.JSON:
         extension = ".json"
 
-    for key in outputParts:
-        with open(output_dir + "/" + str(key) + "_" + unit + extension, 'w') as outfile:
-            if header is not None:
-                outfile.write(header)
-            outfile.write(outputParts[key])
+    if format == FORMAT.PYTHON:
+        for key in outputPartsProductionPython:
+            with open(output_dir + "/" + str(key) + "_" + unit + ".json", 'w') as outfileProduction:
+                outfileProduction.write("""
+                    {
+                      "Hours_test": 24,
+                      "delta_t": 1,
+                      "Starting_sample": 0,
+                      "Line_power_max": 1000,
+                      "Batteries":
+                      {
+                      "CAP_BT": 100,
+                      "SOC_ini": 0.6,
+                      "SOC_min": 0.2,
+                      "SOC_max": 1,
+                      "sigma_BT": 0,
+                      "eta_BT_ch": 1,
+                      "eta_BT_dc": 1,
+                      "K": 25
+                      },
+                      "P_PV_values" : [""")
+                outfileProduction.write(outputPartsProductionPython[key])
+                outfileProduction.write("""],
+                        "big_M": 50000,
+                        "eta_inv": 1,
+                        "c_buy_file": "c_buy_pattern_2.csv",
+                        "c_sell_file": "c_sell_pattern_2.csv",
+                        """)
+                outfileProduction.write(f"\"consumption_file\": \"{str(key)}_{unit}.csv\",")
+                outfileProduction.write("""
+                        "load_uncertainty": 0,
+                        "pv_uncertainty": 0
+                    }""")
+            with open(output_dir + "/" + str(key) + "_" + unit + ".csv", 'w') as outfileConsumption:
+                outfileConsumption.write("Time,Energy absorbed\n")
+                outfileConsumption.write(outputPartsConsumptionPython[key])
+                outfileConsumption.write("28/08/2030 00:00:00,0\n")
+
+
+    else:
+        for key in outputParts:
+            with open(output_dir + "/" + str(key) + "_K" + unit + extension, 'w') as outfile:
+                if header is not None:
+                    outfile.write(header)
+                outfile.write(outputParts[key])
 
 
 def asp_to_cvs(input_file, output_file, unit ="W"):
@@ -332,7 +397,7 @@ def generate_final_excel(clingcon = False):
                     optimality = "OPTIMUM" in lastString
                 numAns = lastString.split("%")[0].split("\n")[0]
                 results = best_grid_transfer_results_parse(lastString, "kWh", decimal_digits=0, clingoLP=clingcon)
-                print(results)
+                #print(results)
                 solving_time = "NA"
 
                 match = re.search(r"Time:\s*([\d.]+)s", lastString.split("%")[0])

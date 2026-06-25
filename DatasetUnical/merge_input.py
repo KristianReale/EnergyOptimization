@@ -10,8 +10,8 @@ import pandas as pd
 class TestExecution(unittest.TestCase):
     def test_execution(self):
         # Leggi i due file CSV
-        df1 = pd.read_csv("Input/cubo/load_results.csv")  # contiene Date, True, dLinear, TimesNet
-        df2 = pd.read_csv("Input/cubo/pv_results_2023.csv")  # contiene Date, True, Pred
+        df1 = pd.read_csv("Input/nuovi_dati/load_results.csv")  # contiene Date, True, dLinear, TimesNet
+        df2 = pd.read_csv("Input/nuovi_dati/pv_results_2023.csv")  # contiene Date, True, Pred
 
         # Converti esplicitamente la colonna 'Date' in datetime
         df1['Date'] = pd.to_datetime(df1['Date'])

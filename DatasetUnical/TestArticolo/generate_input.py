@@ -24,8 +24,15 @@ class TestExecution(unittest.TestCase):
                     os.makedirs(f"Input/asp")
                 if not os.path.exists(f"Input/json"):
                     os.makedirs(f"Input/json")
-                build_from_csv(f"Input/{filename}", f"Input/asp",split_data=SPLIT_DATA.DAY, format=FORMAT.ASP, unit="KWh", noRound=True)
-                build_from_csv(f"Input/{filename}", f"Input/csv",split_data=SPLIT_DATA.DAY, format=FORMAT.CSV, unit="KWh", noRound=True)
+                if not os.path.exists(f"Input/python"):
+                    os.makedirs(f"Input/python")
+                if not os.path.exists(f"Input/greedy"):
+                    os.makedirs(f"Input/greedy")
+                #build_from_csv(f"Input/{filename}", f"Input/asp",split_data=SPLIT_DATA.DAY, format=FORMAT.ASP, unit="KWh", noRound=False)
+                #build_from_csv(f"Input/{filename}", f"Input/csv",split_data=SPLIT_DATA.DAY, format=FORMAT.CSV, unit="KWh", noRound=False)
+                #build_from_csv(f"Input/{filename}", f"Input/python", split_data=SPLIT_DATA.DAY, format=FORMAT.PYTHON, unit="KWh", noRound=False)
+                build_from_csv(f"Input/{filename}", f"Input/greedy", split_data=SPLIT_DATA.DAY, format=FORMAT.GREEDY,
+                               unit="KWh", noRound=False)
                 #build_from_csv(f"Input/{filename}", f"Input/{folder}/json", split_data=SPLIT_DATA.DAY, format=FORMAT.JSON, unit="KWh", what=folder, noRound=True)
 
 
