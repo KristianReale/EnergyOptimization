@@ -1,121 +1,79 @@
 import xlwings as xw
-from pathlib import Path
-import re
 
-# ======================
-# CONFIG
-# ======================
-GREEDY_DIR = Path("greedy")
-MILP_DIR = Path("milp")
-ASP_FILE = Path("asp") / "analysis.xlsx"
+app = xw.App(visible=False, add_book=False)
+app.display_alerts = False
+app.screen_updating = False
 
-DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}")
+try:
+    asp_wb = app.books.open("asp/asp_analysis.xlsx")
+    greedy_wb = app.books.open("greedy/greedy_analysis.xlsx")
+    milp_wb = app.books.open("milp/milp_analysis.xlsx")
 
-# ======================
-# UTILS
-# ======================
-def extract_date(name):
-    m = DATE_PATTERN.match(name)
-    return m.group(0) if m else None
+    def sheets_by_date(wb):
+        return {s.name[:10]: s.name for s in wb.sheets if len(s.name) >= 10}
 
+    asp_map = sheets_by_date(asp_wb)
+    greedy_map = sheets_by_date(greedy_wb)
+    milp_map = sheets_by_date(milp_wb)
 
-def map_files(folder):
-    files = {}
-    for f in folder.glob("*.xlsx"):
-        date = extract_date(f.name)
-        if date:
-            files[date] = f
-    return files
+    common_dates = set(asp_map) & set(greedy_map) & set(milp_map)
 
-
-# ======================
-# MAIN
-# ======================
-def main():
-
-    greedy_files = map_files(GREEDY_DIR)
-    milp_files = map_files(MILP_DIR)
-
-    common_dates = sorted(set(greedy_files) & set(milp_files))
-
-    if not common_dates:
-        print("Nessuna data comune trovata")
-        return
-
-    # avvia Excel (1 sola istanza)
-    app = xw.App(visible=False, add_book=False)
-    app.display_alerts = False
-    app.screen_updating = False
+    CELLS = ["B2", "C2", "D2"]
 
     results = []
 
-    try:
-        asp_wb = app.books.open(str(ASP_FILE))
+    for date in sorted(common_dates):
 
-        for date in common_dates:
+        asp_ws = asp_wb.sheets[asp_map[date]]
+        greedy_ws = greedy_wb.sheets[greedy_map[date]]
+        milp_ws = milp_wb.sheets[milp_map[date]]
 
-            print(f"\n=== {date} ===")
+        if milp_ws.range("A27").value != "Optimal":
+            raise ValueError(
+                f"Nella data {date} la soluzione non è ottima"
+            )
+        EPS = 1e-9
 
-            # =====================
-            # OPEN WORKBOOKS
-            # =====================
-            g_wb = app.books.open(str(greedy_files[date]))
-            m_wb = app.books.open(str(milp_files[date]))
+        # FEED-IN
+        print("MILP: " + str(milp_ws.range("E26").value))
+        print("Greedy " + str(greedy_ws.range("F26").value))
+        print("ASP " + str(asp_ws.range("Q27").value))
+        if abs(milp_ws.range("E26").value - greedy_ws.range("F26").value) > EPS or abs(milp_ws.range("E26").value - asp_ws.range("Q27").value) > EPS or abs(greedy_ws.range("F26").value - asp_ws.range("Q27").value) > EPS:
+            raise ValueError(
+                f"La quantità ESPORTATA non corrisponde nella data {date}"
+            )
 
-            # ASP sheet = data
-            if date not in [s.name for s in asp_wb.sheets]:
-                print(f"ASP sheet mancante: {date}")
-                g_wb.close()
-                m_wb.close()
-                continue
+        # FROM-GRID
+        print("MILP: " + str(milp_ws.range("D26").value))
+        print("Greedy " + str(greedy_ws.range("G26").value))
+        print("ASP " + str(asp_ws.range("R27").value))
+        if abs(milp_ws.range("D26").value - greedy_ws.range("G26").value) > EPS or abs(milp_ws.range("D26").value - asp_ws.range("R27").value) > EPS or abs(greedy_ws.range("G26").value - asp_ws.range("R27").value) > EPS:
+            raise ValueError(
+                f"La quantità IMPORTATA non corrisponde nella data {date}"
+            )
 
-            g_ws = g_wb.sheets[0]   # oppure .sheets["Sheet1"]
-            m_ws = m_wb.sheets[0]
-            a_ws = asp_wb.sheets[date]
+        # DISCHARGE
+        print("MILP: " + str(milp_ws.range("H26").value))
+        print("Greedy " + str(greedy_ws.range("B26").value))
+        print("ASP " + str(asp_ws.range("M27").value))
+        if abs(milp_ws.range("H26").value - greedy_ws.range("B26").value) > EPS or abs(milp_ws.range("H26").value - asp_ws.range("M27").value) > EPS or abs(greedy_ws.range("B26").value - asp_ws.range("M27").value) > EPS:
+            raise ValueError(
+                f"La quantità SCARICATA non corrisponde nella data {date}"
+            )
 
-            # =====================
-            # LETTURA CELLE (ESEMPIO)
-            # =====================
-
-            # esempio colonne tipiche
-            greedy_discharge = g_ws.range("B26").value
-            milp_discharge   = m_ws.range("H26").value
-            asp_discharge    = a_ws.range("M27").value
-
-
-            print("Discharge:")
-            print("  greedy:", greedy_discharge)
-            print("  milp  :", milp_discharge)
-            print("  asp   :", asp_discharge)
-
-
-
-            results.append({
-                "date": date,
-                "greedy_discharge": greedy_discharge,
-                "milp_discharge": milp_discharge,
-                "asp_discharge": asp_discharge,
-            })
-
-            # chiudi file per evitare memory leak
-            g_wb.close()
-            m_wb.close()
-
-        asp_wb.close()
-
-    finally:
-        app.quit()
-
-    # ======================
-    # OUTPUT
-    # ======================
-    import pandas as pd
-
-    df = pd.DataFrame(results)
-    df.to_excel("confronto.xlsx", index=False)
-
-    print("\nCreato: confronto.xlsx")
+        # CHARGE
+        print("MILP: " + str(milp_ws.range("G26").value))
+        print("Greedy " + str(greedy_ws.range("C26").value))
+        print("ASP " + str(asp_ws.range("N27").value))
+        if abs(milp_ws.range("G26").value - greedy_ws.range("C26").value) > EPS or abs(milp_ws.range("G26").value - asp_ws.range("N27").value) > EPS or abs(greedy_ws.range("C26").value - asp_ws.range("N27").value) > EPS:
+            raise ValueError(
+                f"La quantità CARICATA non corrisponde nella data {date}"
+            )
 
 
-if __name__ == "__main__":
-    main()
+
+    print("Le soluzione corrisponde")
+
+finally:
+    app.quit()
+

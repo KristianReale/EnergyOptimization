@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 
@@ -9,7 +11,7 @@ import csv
 from openpyxl import load_workbook
 
 inputFolder = "./csv/"
-outputFolder = "../../Results/nuovi_dati/greedy/"
+outputFolderFile = "../../Results/nuovi_dati/greedy/greedy_analysis.xlsx"
 
 file_list = [f for f in os.listdir(inputFolder) if
                   f.endswith(
@@ -118,17 +120,21 @@ for fIn in file_list:
 
         # === 6️⃣ (Facoltativo) Salva il risultato ===
         end = time.time()  # tempo finale
-        res_df.to_excel(f"{outputFolder}{fIn}.xlsx", index=False)
 
-        wb = load_workbook(f"{outputFolder}{fIn}.xlsx")
-        ws = wb["Sheet1"]
+        mode = "a" if Path(outputFolderFile).exists() else "w"
+        sheet_name = fIn.split(".")[0]
+        with pd.ExcelWriter(outputFolderFile, mode=mode) as writer:
+            res_df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+        wb = load_workbook(outputFolderFile)
+        ws = wb[sheet_name]
         ws["B26"] = "=SUM(B2:B25)"
         ws["C26"] = "=SUM(C2:C25)"
         ws["D26"] = "=SUM(D2:D25)"
         ws["E26"] = "=SUM(E2:E25)"
         ws["F26"] = "=SUM(F2:F25)"
         ws["G26"] = "=SUM(G2:G25)"
-        wb.save(f"{outputFolder}{fIn}.xlsx")
+        wb.save(outputFolderFile)
 
         print("Tempo di esecuzione:", end - start, "secondi")
         print("Calcolo dei valori mancanti completato.")
