@@ -70,8 +70,11 @@ def group_data(input_file, minute_granularity=60): #per media
             #    chargeInitValue = float(state_of_charge)
     return hourly_data
 
-def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP, unit ="W", what="real", noRound=False):
+def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP, unit ="W", what="real", noRound=False, csv_bounds_file=None):
     hourly_data = group_data(input_file, minute_granularity)
+    dfBounds = None
+    if csv_bounds_file is not None:
+        dfBounds = pd.read_csv(csv_bounds_file)
     '''for (date, hour), values in hourly_data.items():
         fact_str += (
             f"discharge(\"{date}\",{hour},{sum(values['discharge']) / len(values['discharge'])*10:.0f}).\n"
@@ -93,6 +96,15 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
     outputPartsConsumptionPython = {}
 
     for (date, time), values in hourly_data.items():
+        minDischarge = 0
+        minCharge = 0
+        minK = 0
+        if dfBounds is not None:
+            row = dfBounds.loc[dfBounds["Date"] == str(date)]
+            minDischarge = row["MinDischarge"].iloc[0]
+            minCharge = row["MinCharge"].iloc[0]
+            minK = row["K"].iloc[0]
+
         if currentDate == None:
             currentDate = date
         elif currentDate != date:
@@ -168,6 +180,7 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                     #    f"vE_SinitPercentage({round(state_of_charge)}).\n"
                     #)
                     initChargeStr = f"vE_SinitPercentage({round(state_of_charge)}).\n"
+
             '''if not noRound:
                 if unit == "KWh":
                     stringToWrite += (
@@ -183,6 +196,8 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                     )
             else:
             '''
+
+
             strPositive = ""
             diff = 0
             diff = production - consumption
@@ -197,6 +212,13 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                 f"diffPV_L(\"{date}\",\"{time}:{minutes_seconds}\", \"{diff}\", {strPositive}).\n"
                 f"diffPV_L_int(\"{date}\",\"{time}:{minutes_seconds}\", {math.floor(diff)}, {strPositive}).\n"
             )
+            if dfBounds is not None:
+                stringToWrite += (
+                    f"disOpt(\"{minDischarge}\").\n"
+                    f"chOpt(\"{minCharge}\").\n"
+                    f"maxUse({minK}).\n"
+                )
+
         elif format == FORMAT.CSV:
             stringToWrite += f"{date} {time}:{minutes_seconds},{production},{consumption}\n"
 

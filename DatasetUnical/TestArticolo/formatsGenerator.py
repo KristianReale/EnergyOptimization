@@ -69,8 +69,11 @@ def group_data(input_file, minute_granularity=60): #per media
             #    chargeInitValue = float(state_of_charge)
     return hourly_data
 
-def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP, unit ="W", noRound=False):
+def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data = SPLIT_DATA.NO_SPLIT, format = FORMAT.ASP, unit ="W", noRound=False, csv_bounds_file=None):
     hourly_data = group_data(input_file, minute_granularity)
+    dfBounds = None
+    if csv_bounds_file is not None:
+        dfBounds = pd.read_csv(csv_bounds_file)
 
     '''for (date, hour), values in hourly_data.items():
         fact_str += (
@@ -152,6 +155,10 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                         f"vP_L(\"{date}\",\"{time}:{minutes_seconds}\",{consumption * 10:.0f}).\n"
                     )
             else:'''
+            if dfBounds is not None:
+                row = dfBounds.loc[dfBounds["Date"] == "2021-01-10"].iloc[0]
+                print(f"K VALUE: {row}" )
+
             strPositive = ""
             diff = 0
             diff = production - consumption
@@ -294,23 +301,23 @@ def csv_to_json(file):
 
 
 def generate_final_excel(clingcon = False):
-    resultsFolder = os.path.dirname(os.path.abspath(__file__)) + f"/Results/nuovi_dati"
+    resultsFolder = os.path.dirname(os.path.abspath(__file__)) + f"/Results/nuovi_dati/k"
     house_list = [f for f in os.listdir(resultsFolder) if os.path.isdir(os.path.join(resultsFolder, f)) and f not in ["pythonData"] and not f.endswith("_finalResults.txt")]
 
     nextInitCharge = 60
     excel_file = resultsFolder + f"/analysis.xlsx"
     wb = Workbook()
     wb.remove(wb.active)
-    file_list = sorted([f for f in os.listdir(os.path.dirname(os.path.abspath(__file__)) + f"/Results/nuovi_dati") if f.startswith("output") and not f.endswith("_finalCharge.txt")])
+    file_list = sorted([f for f in os.listdir(os.path.dirname(os.path.abspath(__file__)) + f"/Results/nuovi_dati/k") if f.startswith("output") and not f.endswith("_finalCharge.txt")])
     maxCharge = 100
     for file in file_list:
         date_file = re.search(r'(\d{4}-\d{2}-\d{2})', file).group(1)
         print(file)
         input_file_asp = os.path.dirname(
-            os.path.abspath(__file__)) + "/Results/nuovi_dati" + f"/{file}"
+            os.path.abspath(__file__)) + "/Results/nuovi_dati/k/" + f"/{file}"
 
         input_file_csv = os.path.dirname(
-            os.path.abspath(__file__)) + "/Input/nuovi_dati" + f"/csv/{date_file}_KWh.csv"
+            os.path.abspath(__file__)) + "/Input/nuovi_dati" + f"/csv/k/{date_file}_KWh.csv"
 
         ws1 = wb.create_sheet(title=date_file)
         init_state_of_charge = 80
