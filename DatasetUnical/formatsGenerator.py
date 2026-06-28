@@ -94,16 +94,17 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
 
     outputPartsProductionPython = {}
     outputPartsConsumptionPython = {}
+    outputPartsMaxKPython = {}
 
     for (date, time), values in hourly_data.items():
         minDischarge = 0
         minCharge = 0
-        minK = 0
+        maxK = 0
         if dfBounds is not None:
             row = dfBounds.loc[dfBounds["Date"] == str(date)]
             minDischarge = row["MinDischarge"].iloc[0]
             minCharge = row["MinCharge"].iloc[0]
-            minK = row["K"].iloc[0]
+            maxK = row["K"].iloc[0]
 
         if currentDate == None:
             currentDate = date
@@ -216,11 +217,16 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                 stringToWrite += (
                     f"disOpt(\"{minDischarge}\").\n"
                     f"chOpt(\"{minCharge}\").\n"
-                    f"maxUse({minK}).\n"
+                    f"maxUse({maxK}).\n"
                 )
 
         elif format == FORMAT.CSV:
-            stringToWrite += f"{date} {time}:{minutes_seconds},{production},{consumption}\n"
+            stringToWrite += f"{date} {time}:{minutes_seconds},{production},{consumption}"
+            if dfBounds is not None:
+                stringToWrite += f",{maxK}"
+            stringToWrite += "\n"
+
+
 
         if split_data == SPLIT_DATA.DAY:
             if format == FORMAT.JSON:
@@ -245,6 +251,10 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
 
                 stringPythonToWriteConsumption = f"{datetimeToWrite},{consumption}\n"
 
+                maxKPython = 24
+                if dfBounds is not None:
+                    maxKPython = maxK
+                outputPartsMaxKPython[date] = maxKPython
                 if date not in outputPartsProductionPython:
                     outputPartsProductionPython[date] = stringPythonToWriteProduction
                     outputPartsConsumptionPython[date] = stringPythonToWriteConsumption
@@ -266,14 +276,17 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
             initChargeFile.write(initChargeStr)
     elif format == FORMAT.CSV:
         extension = ".csv"
-        if unit == "KWh":
-            header = "date,Production(KWh),Consumption(KWh)\n"
-        else:
-            header = "date,Production(W),Consumption(W)\n"
+        header = "date,Production,Consumption"
+        if dfBounds is not None:
+            header += ",K"
+        header += "\n"
     elif format == FORMAT.JSON:
         extension = ".json"
 
     if format == FORMAT.PYTHON:
+        maxKPython = 24
+        if dfBounds is not None:
+            maxKPython = maxK
         for key in outputPartsProductionPython:
             with open(output_dir + "/" + str(key) + "_" + unit + ".json", 'w') as outfileProduction:
                 outfileProduction.write("""
@@ -291,7 +304,9 @@ def build_from_csv(input_file, output_dir, minute_granularity = 60, split_data =
                       "sigma_BT": 0,
                       "eta_BT_ch": 1,
                       "eta_BT_dc": 1,
-                      "K": 25
+                      "K": """)
+                outfileProduction.write(str(outputPartsMaxKPython[key]))
+                outfileProduction.write("""
                       },
                       "P_PV_values" : [""")
                 outfileProduction.write(outputPartsProductionPython[key])

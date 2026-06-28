@@ -454,6 +454,7 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=0, clingoL
     #print(result)
 
     pattern_vE_Sinit = r'vE_Sinit\((.*?)\)'  # Adatta se il formato cambia
+    pattern_maxUse = r'maxUse\((.*?)\)'  # Adatta se il formato cambia
     pattern_maxCharge = r'maxChargeKWh\((.*?)\)'  # Adatta se il formato cambia
     pattern_vP_L = r'vP_L\((.*?)\)'  # Adatta se il formato cambia
     pattern_vP_PV = r'vP_PV\((.*?)\)'  # Adatta se il formato cambia
@@ -466,6 +467,7 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=0, clingoL
     pattern_feed_in = r'vFeed_in\((.*?)\)'  # Adatta se il formato cambia
     pattern_from_grid = r'vFrom_grid\((.*?)\)'  # Adatta se il formato cambia
 
+    matches_maxUse = re.findall(pattern_maxUse, result)
     matches_maxCharge = re.findall(pattern_maxCharge, result)
     matches_vE_Sinit = re.findall(pattern_vE_Sinit, result)
     matches_vP_L = re.findall(pattern_vP_L, result)
@@ -485,6 +487,10 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=0, clingoL
     initCharge = 0
     for match in matches_vE_Sinit:
         initCharge = float(match.strip('"'))
+
+    maxUse = -1
+    for match in matches_maxUse:
+        maxUse = float(match)
 
     maxCharge = 0
     for match in matches_maxCharge:
@@ -670,6 +676,8 @@ def best_grid_transfer_results_parse(result, unit="W", decimal_digits=0, clingoL
     object_result = {"P_L": vP_L_results, "P_PV": vP_PV_results,  "Charge": charge_results,
                      "Discharge": discharge_results, "Feed-in" : feed_in_results, "From grid": from_grid_results,
                      "final_charge": finalChargeValue}#, "final_charge_percentage": (finalChargeValue / maxCharge * 100)}
+    if maxUse >= 0:
+        object_result.update({"Max_use": maxUse})
     #print(object_result)
     return object_result
 

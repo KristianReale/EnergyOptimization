@@ -10,8 +10,8 @@ import csv
 
 from openpyxl import load_workbook
 
-inputFolder = "./csv/"
-outputFolderFile = "../../Results/nuovi_dati/greedy/greedy_analysis.xlsx"
+inputFolder = "./csv/k/"
+outputFolderFile = "../../Results/nuovi_dati/greedy/k/greedy_analysis.xlsx"
 
 file_list = [f for f in os.listdir(inputFolder) if
                   f.endswith(
@@ -54,7 +54,8 @@ for fIn in file_list:
         soc_percents = []
         soc_values = []
         for row in reader:
-            date, production, consumption = row
+            date, production, consumption, k = row
+            maxDischargeTimes = int(k)
             production = float(production)
             consumption = float(consumption)
             # Esempio: ottieni i valori noti della riga
@@ -134,6 +135,10 @@ for fIn in file_list:
         ws["E26"] = "=SUM(E2:E25)"
         ws["F26"] = "=SUM(F2:F25)"
         ws["G26"] = "=SUM(G2:G25)"
+        ws["A28"] = "Max K"
+        ws["B28"] = maxDischargeTimes
+        ws['A29'] = "Conteggio"
+        ws['B29'] = "=COUNTIF(B2:B25,\">0\")"
         wb.save(outputFolderFile)
 
         print("Tempo di esecuzione:", end - start, "secondi")

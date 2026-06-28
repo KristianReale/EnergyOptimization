@@ -339,7 +339,7 @@ def generate_final_excel(clingcon = False):
             i = 3
             for row in reader:
                 #print(row)
-                date, production, consumption = row
+                date, production, consumption, k = row
                 #if i == 3:
                 #    init_state_of_charge = state_of_charge
                 ws1[f"A{i}"] = date
@@ -373,6 +373,7 @@ def generate_final_excel(clingcon = False):
             if match:
                 secondi = float(match.group(1))
                 solving_time = secondi
+
 
             model_time = "NA"
             #pattern = r"Solving:\s*([\d.]+)s.*?1st Model:\s*([\d.]+)s"
@@ -467,6 +468,11 @@ def generate_final_excel(clingcon = False):
         ws1['P27'] = "=SUM(P3:P26)"
         ws1['Q27'] = "=SUM(Q3:Q26)"
         ws1['R27'] = "=SUM(R3:R26)"
+
+        ws1['M29'] = "Max K"
+        ws1['N29'] = results["Max_use"]
+        ws1['M30'] = "Conteggio"
+        ws1['N30'] = "=COUNTIF(M3:M26,\">0\")"
 
         finalChargeFileName = input_file_asp.rsplit(".", 1)[0] + "_finalCharge.txt"
         #print("AAA " + finalChargeFileName)
